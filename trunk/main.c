@@ -66,11 +66,12 @@ pak_list_init(void)
 {
 
 	po_info = (struct pak_file_info *)malloc(sizeof(struct pak_file_info));
-	po_info->pak_no = 0;
-	po_info->offset = 0;
-	po_info->pak    = NULL;
-	po_info->prev   = NULL;
-	po_info->next   = NULL;
+	po_info->pak_no    = 0;
+	po_info->offset    = 0;
+	po_info->pak       = NULL;
+	po_info->mem_alloc = 0;
+	po_info->prev      = NULL;
+	po_info->next      = NULL;
 }
 
 void 
@@ -204,7 +205,7 @@ file_save(GtkWidget *w,
 	temp = po_info->next;
 	while(temp)
 	{
-		if (temp->pak != NULL) {
+		if (temp->mem_alloc == 1) {
 			fwrite((void *)&temp->pak_hdr, sizeof(struct pcap_pkthdr), 1, fp_temp);
 			fwrite(temp->pak, temp->pak_len, 1, fp_temp);
 		} else {
@@ -255,7 +256,7 @@ static void file_save_as(GtkWidget *w,
         	temp = po_info->next;
         	while(temp)
         	{
-                	if (temp->pak != NULL) {
+                	if (temp->mem_alloc == 1) {
                         	fwrite((void *)&temp->pak_hdr, sizeof(struct pcap_pkthdr), 1, fp_temp);
                         	fwrite(temp->pak, temp->pak_len, 1, fp_temp);
                 	} else {
@@ -745,7 +746,7 @@ p_display_modified()
 {
     GtkTextIter start, end;
 
-    if (fpak_curr_info->pak == NULL) {
+    if (fpak_curr_info->mem_alloc == 0) {
         fseek(p->rfile,fpak_curr_info->offset,0);
         p->buffer = p->base;
         pcap_offline_read(p,1);
@@ -783,7 +784,7 @@ cell_edited (GtkCellRendererText *renderer,
 	{
 		model = gtk_tree_view_get_model (treeview);
 		if (gtk_tree_model_get_iter_from_string (model, &iter, path)) {
-			if (fpak_curr_info->pak == NULL) {
+			if (fpak_curr_info->mem_alloc == 0) {
 				fpak_curr_info->pak = malloc(p->cap_len);
     				memcpy(fpak_curr_info->pak,p->buffer,p->cap_len);
 				fpak_curr_info->pak_len = p->cap_len;
@@ -923,7 +924,7 @@ pl_cur_changed(GtkTreeView *treeview)
     }
     gtk_tree_model_get (model, &iter, 0, &no, -1);
     fpak_curr_info  = pak_list_get(no);
-    if (fpak_curr_info->pak == NULL) {
+    if (fpak_curr_info->mem_alloc == 0) {
     	fseek(p->rfile,fpak_curr_info->offset,0);    
 	p->buffer = p->base;
     	pcap_offline_read(p,1);
@@ -1030,7 +1031,7 @@ pl_view_popup_menu_stream_change (GtkWidget *menuitem, gpointer userdata)
 
 		err_val = 0;
 		for (i = 1; (fpak_curr_info = pak_list_get(i)) != NULL; i++) {
-			if (fpak_curr_info->pak == NULL) {
+			if (fpak_curr_info->mem_alloc == 0) {
 				fseek(p->rfile,fpak_curr_info->offset,0);
 				p->buffer = p->base;
 				pcap_offline_read(p,1);
@@ -1045,7 +1046,9 @@ pl_view_popup_menu_stream_change (GtkWidget *menuitem, gpointer userdata)
                                 	fpak_curr_info->pak_len = p->cap_len;
 				}
 			} else {
-				fpak_curr_info->pak = NULL;
+				if (fpak_curr_info->mem_alloc == 0) {
+					fpak_curr_info->pak = NULL;
+				}
 			}
 			if (err_val != 0) {
 				error_val();
@@ -1132,7 +1135,7 @@ pl_view_popup_menu_mac_ip_change (GtkWidget *menuitem, gpointer userdata)
 
                 err_val = 0;
                 for (i = 1; (fpak_curr_info = pak_list_get(i)) != NULL; i++) {
-                        if (fpak_curr_info->pak == NULL) {
+                        if (fpak_curr_info->mem_alloc == 0) {
                                 fseek(p->rfile,fpak_curr_info->offset,0);
                                 p->buffer = p->base;
                                 pcap_offline_read(p,1);
@@ -1147,7 +1150,9 @@ pl_view_popup_menu_mac_ip_change (GtkWidget *menuitem, gpointer userdata)
                                         fpak_curr_info->pak_len = p->cap_len;
                                 }
                         } else {
-                                fpak_curr_info->pak = NULL;
+				if (fpak_curr_info->mem_alloc == 0) {
+                                	fpak_curr_info->pak = NULL;
+				}
                         }
                         if (err_val != 0) {
                                 error_val();
@@ -1418,7 +1423,7 @@ send_pak() {
 	}
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (send_all_check))) {
                for (i = 1; (fpak_curr_info = pak_list_get(i)) != NULL; i++) {
-                        if (fpak_curr_info->pak == NULL) {
+                        if (fpak_curr_info->mem_alloc == 0) {
                                 fseek(p->rfile,fpak_curr_info->offset,0);
                                 p->buffer = p->base;
                                 pcap_offline_read(p,1);

@@ -56,6 +56,7 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 	pak_info->eth_proto = ntohs(eth_hdr->h_proto);	
     	strcpy(pak_info->row_color, "#FFFFFF");
 	strcpy(pak_info->info, " ");
+	strcpy(pak_info->protocol, "UNKNOWN");
 
 
 	tptr += sizeof(struct ethhdr);

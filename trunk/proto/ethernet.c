@@ -93,6 +93,10 @@ display_ether(uint8_t **pak)
 		cur_pak_info.L3_off = sizeof(struct ethhdr);
 		*pak += sizeof(struct ethhdr); 
 		cur_pak_info.L3_proto = ntohs(eth_hdr->h_proto);
+	} else {
+                cur_pak_info.L3_off = sizeof(struct ethhdr);
+                *pak += sizeof(struct ethhdr);
+                cur_pak_info.L3_proto = ntohs(eth_hdr->h_proto);
 	}
 	return cur_pak_info.L3_proto;
 }
