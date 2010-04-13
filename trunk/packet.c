@@ -199,7 +199,7 @@ display_L3(uint8_t **pak, uint16_t L3_proto)
 		display_arp(pak);
 		return 0;
 	} else {
-        return 0;
+        	return 0;
     }
 
 }
@@ -215,11 +215,13 @@ display_L4(uint8_t **pak, uint8_t L4_proto)
 		display_icmp(pak);
 	} else if (L4_proto == 0x02) {  /*IGMP*/
                 display_igmp(pak);
-        }
+        } else {
+		return 0;	
+	}
 }
 
 void
-display_L5(uint8_t *pak)
+display_L5(uint8_t *pak, uint16_t L5_proto)
 {
 
 }
@@ -236,7 +238,7 @@ display_pak(uint8_t *pak)
 	L3_proto = display_L2(&hdr_cur);
 	L4_proto = display_L3(&hdr_cur, L3_proto);
 	L5_proto = display_L4(&hdr_cur, L4_proto);
-	display_L5(hdr_cur);
+	display_L5(hdr_cur, L5_proto);
 
 }
 

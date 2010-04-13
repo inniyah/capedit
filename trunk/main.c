@@ -105,6 +105,8 @@ pak_list_add(struct pak_file_info **current, uint32_t offset, uint32_t pak_no)
 	temp->offset = offset;
 	memcpy((void *)&(temp->pak_hdr), (void *)&(p->pak_hdr), sizeof(struct pcap_pkthdr));
 	temp->pak = NULL;
+	temp->pak_len = p->cap_len;
+printf("-%d\n",temp->pak_len);
 	temp->mem_alloc = 0;
 	temp->prev = *current;
 	temp->next = NULL;
@@ -265,6 +267,7 @@ static void file_save_as(GtkWidget *w,
                         	pcap_offline_read(p,1);
                         	fwrite((void *)&p->pak_hdr, sizeof(struct pcap_pkthdr), 1, fp_temp);
                         	fwrite(p->buffer, p->cap_len, 1, fp_temp);
+printf("-%d\n",p->cap_len);
                 	}
                 	temp = temp->next;
         	}

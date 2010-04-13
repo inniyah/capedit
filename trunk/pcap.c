@@ -55,7 +55,7 @@ pcap_read_next_pak(pcap_t *p,struct pcap_pkthdr *hdr, uint8_t *buf, uint8_t bufl
 	hdr->ts.tv_sec = h.ts.tv_sec;
 	hdr->ts.tv_usec = h.ts.tv_usec;
 
-	p->cap_len = h.len;
+	p->cap_len = h.caplen;
 
 	amt_read = fread((char *)buf, 1, h.caplen, fp);
 	if (amt_read != hdr->caplen) {
