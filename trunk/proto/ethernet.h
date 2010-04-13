@@ -31,7 +31,7 @@
 
 struct ether_addr
 {
-  u_int8_t ether_addr_octet[6];
+  uint8_t ether_addr_octet[6];
 } __attribute__ ((__packed__));
 
 

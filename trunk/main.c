@@ -47,7 +47,7 @@ static GtkWidget *hex_textview;
 static GtkTextBuffer *hex_buffer;
 struct pak_file_info *po_info = NULL;
 static char f_name[255];
-static pcap_t *p = NULL;
+pcap_t *p = NULL;
 struct pak_file_info *fpak_curr_info = NULL;
 char ptype[50];
 int record_l1;
@@ -106,7 +106,6 @@ pak_list_add(struct pak_file_info **current, uint32_t offset, uint32_t pak_no)
 	memcpy((void *)&(temp->pak_hdr), (void *)&(p->pak_hdr), sizeof(struct pcap_pkthdr));
 	temp->pak = NULL;
 	temp->pak_len = p->cap_len;
-printf("-%d\n",temp->pak_len);
 	temp->mem_alloc = 0;
 	temp->prev = *current;
 	temp->next = NULL;
@@ -267,7 +266,6 @@ static void file_save_as(GtkWidget *w,
                         	pcap_offline_read(p,1);
                         	fwrite((void *)&p->pak_hdr, sizeof(struct pcap_pkthdr), 1, fp_temp);
                         	fwrite(p->buffer, p->cap_len, 1, fp_temp);
-printf("-%d\n",p->cap_len);
                 	}
                 	temp = temp->next;
         	}
@@ -278,6 +276,57 @@ printf("-%d\n",p->cap_len);
   	}
 file_save_as_end:
 	gtk_widget_destroy (dialog);
+}
+
+static void
+fragment_packets (GtkWidget *w,
+          gpointer   data )
+{
+	GtkWidget *dialog, *table, *w_frag_size;
+	GtkWidget *lbl1;
+	gint result;
+	gchar *p_frag_size, *f_val;
+	uint16_t fsize = 8;
+	struct pak_file_info *fpak_curr_next = NULL;
+
+        dialog = gtk_dialog_new_with_buttons ("Fragment Options", NULL,
+                                                GTK_DIALOG_MODAL,
+                                                GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                NULL);
+	gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_OK);
+	
+	lbl1 = gtk_label_new ("Fragment Size:");
+	w_frag_size   = gtk_entry_new ();
+
+	gtk_entry_set_text (GTK_ENTRY (w_frag_size), "8");
+
+	table = gtk_table_new (1, 2, FALSE);
+
+	gtk_table_attach_defaults (GTK_TABLE (table), lbl1, 0, 1, 0, 1);
+	gtk_table_attach_defaults (GTK_TABLE (table), w_frag_size, 1, 2, 0, 1);
+
+	gtk_container_set_border_width (GTK_CONTAINER (table), 5);
+	gtk_box_pack_start_defaults (GTK_BOX (GTK_DIALOG (dialog)->vbox), table);
+	gtk_widget_show_all (dialog);
+
+	result = gtk_dialog_run (GTK_DIALOG (dialog));
+	if (result == GTK_RESPONSE_OK)
+	{
+		p_frag_size = (gchar *)gtk_entry_get_text (GTK_ENTRY (w_frag_size));
+		fsize = atoi(p_frag_size);
+		err_val = 0;
+		fpak_curr_info = pak_list_get(1);
+		for (; fpak_curr_info  != NULL; ) {
+			fpak_curr_next = fpak_curr_info->next;
+			frag_pak(fpak_curr_info, fsize);
+			fpak_curr_info = fpak_curr_next;
+		}			
+
+	}
+	gtk_widget_destroy (dialog);
+	
+
 }
 
 void
@@ -628,6 +677,8 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/File/Save _As", "<shift><control>S", file_save_as, 0, "<StockItem>",GTK_STOCK_SAVE_AS },
   { "/File/sep1",     NULL,         NULL,           0, "<Separator>" },
   { "/File/_Quit",    "<CTRL>Q", gtk_main_quit, 0, "<StockItem>", GTK_STOCK_QUIT },
+  { "/_Edit",         NULL,         NULL,           0, "<Branch>" },
+  { "/Edit/_Fragment Packets",    "<control>F", fragment_packets, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
   { "/_Help",         NULL,         NULL,           0, "<Branch>" },
   { "/_Help/About",   NULL,         NULL,           0, "<Item>" },
 };

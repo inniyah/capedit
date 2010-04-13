@@ -21,4 +21,4 @@
 
 
 all:	
-	gcc pcap.c packet.c to_str.c str_to.c main.c error.c pakvalupdate.c intf.c socket.c proto/ethernet.c proto/arp.c proto/ipv4.c proto/icmp.c proto/igmp.c proto/udp.c proto/tcp.c -o capedit `pkg-config --cflags --libs gtk+-2.0`
+	gcc pcap.c fragment.c packet.c to_str.c str_to.c main.c error.c pakvalupdate.c intf.c socket.c proto/ethernet.c proto/arp.c proto/ipv4.c proto/icmp.c proto/igmp.c proto/udp.c proto/tcp.c -o capedit `pkg-config --cflags --libs gtk+-2.0`

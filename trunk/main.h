@@ -33,6 +33,7 @@ extern char ptype[50];
 extern uint16_t p_ref_proto;
 extern int record_l1;
 extern int record_l2;
+extern pcap_t *p;
 
 enum {
 	UINT8,

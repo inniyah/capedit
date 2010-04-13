@@ -121,7 +121,7 @@ void update_ipv4(char *value)
         } else if (!strcmp(ptype,"Flags:")) {
 		ip_hdr->frag_off = pak_set_bits_uint16_hex(ip_hdr->frag_off, 15, 3, value);
         } else if (!strcmp(ptype,"Reserved bit:")) {
-		 ip_hdr->frag_off = pak_set_bits_uint16(ip_hdr->frag_off, 15, 1, value);
+		ip_hdr->frag_off = pak_set_bits_uint16(ip_hdr->frag_off, 15, 1, value);
         } else if (!strcmp(ptype,"Don't fragment:")) {
        		ip_hdr->frag_off = pak_set_bits_uint16(ip_hdr->frag_off, 14, 1, value); 
         } else if (!strcmp(ptype,"More fragments:")) {
