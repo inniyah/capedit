@@ -54,7 +54,7 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 	pak_info->src_mac = ether_to_str((uint8_t *)eth_hdr->h_source);
 	pak_info->dst_mac = ether_to_str((uint8_t *)eth_hdr->h_dest);
 	pak_info->eth_proto = ntohs(eth_hdr->h_proto);	
-    	strcpy(pak_info->row_color, "#FFFFFF");
+    	strcpy(pak_info->row_color, "#E3E3E3");
 	strcpy(pak_info->info, " ");
 	strcpy(pak_info->protocol, "UNKNOWN");
 
@@ -74,7 +74,6 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 		pak_info->src_ip = ip_to_str((uint8_t *)&(ip_hdr->saddr));
 		pak_info->dst_ip = ip_to_str((uint8_t *)&(ip_hdr->daddr));
 		pak_info->proto  = ip_hdr->protocol;
-		strcpy(pak_info->row_color, "#FFFFFF");
 		strcpy(pak_info->protocol, "IP");
 		if (pak_get_bits_uint16(ip_hdr->frag_off, 13, 1) == 1) {
 			strcpy(pak_info->info, "Fragmented IP Packet");
@@ -436,7 +435,28 @@ update_mac_ip(const gchar *src_mac, const gchar *dst_mac, const gchar *src_ip, c
                                                 tcp_hdr->check = ComputeTCPChecksum(tcp_hdr, ip_hdr);
 						return (1);
                                         }
-                        }
+                        } else if (ip_hdr->protocol == 0x02) {
+                                        if (pak_reversed == 0) {
+                                                pak_val_update(eth_hdr->h_source, src_mac, MAC);
+                                                pak_val_update(eth_hdr->h_dest, dst_mac, MAC);
+                                                pak_val_update(&ip_hdr->saddr, src_ip, IPV4_ADDR);
+                                                pak_val_update(eth_hdr->h_dest, dst_mac, MAC);
+                                                pak_val_update(&ip_hdr->saddr, src_ip, IPV4_ADDR);
+                                                pak_val_update(&ip_hdr->daddr, dst_ip, IPV4_ADDR);
+                                                ip_hdr->check = 0;
+                                                ip_hdr->check = in_cksum(ip_hdr, ip_hdr->ihl*4);
+                                                return (1);
+                                        } else if (pak_reversed == 1) {
+                                                pak_val_update(eth_hdr->h_source, dst_mac, MAC);
+                                                pak_val_update(eth_hdr->h_dest, src_mac, MAC);
+                                                pak_val_update(&ip_hdr->saddr, dst_ip, IPV4_ADDR);
+                                                pak_val_update(&ip_hdr->daddr, src_ip, IPV4_ADDR);
+                                                ip_hdr->check = 0;
+                                                ip_hdr->check = in_cksum(ip_hdr, ip_hdr->ihl*4);
+                                                return (1);
+                                        }
+
+			}
                 }
         }
 	return (0);
