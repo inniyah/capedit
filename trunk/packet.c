@@ -75,6 +75,11 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 		pak_info->dst_ip = ip_to_str((uint8_t *)&(ip_hdr->daddr));
 		pak_info->proto  = ip_hdr->protocol;
 		strcpy(pak_info->row_color, "#FFFFFF");
+		strcpy(pak_info->protocol, "IP");
+		if (pak_get_bits_uint16(ip_hdr->frag_off, 13, 1) == 1) {
+			strcpy(pak_info->info, "Fragmented IP Packet");
+			return 1;
+		}
 		if (pak_info->proto == 0x11) {
 			tptr += (ip_hdr->ihl * 4);	
 			udp_hdr = (struct udphdr *)tptr;

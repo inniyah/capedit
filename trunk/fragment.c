@@ -27,8 +27,6 @@
 #include "fragment.h"
 #include "pcap.h"
 
-static temp = 0;
-
 void
 frag_pak (struct pak_file_info *fpak_info, uint16_t size)
 {
@@ -37,6 +35,7 @@ frag_pak (struct pak_file_info *fpak_info, uint16_t size)
 	uint8_t *data = NULL;
 	uint16_t data_len = 0;
 	uint16_t hdrs_len = 0;
+	uint16_t pad = 0;
 	uint16_t ip_offset = 0;
 	uint16_t data_offset = 0;
 	struct ethhdr *eth_hdr;
@@ -48,7 +47,6 @@ frag_pak (struct pak_file_info *fpak_info, uint16_t size)
 	struct pak_file_info *last, *temp_fpak_prev;
 
 	
-temp++;
 	if (fpak_info->mem_alloc == 0) {
 		fseek(p->rfile,fpak_info->offset,0);
 		p->buffer = p->base;
@@ -80,7 +78,6 @@ temp++;
 		hdrs_len += (ip_hdr->ihl * 4);
 		data = (uint8_t *)pak; 
 		if (data_len > size) {
-printf("-----%d\n",temp);
 			while (data_offset < data_len) {
 				temp_fpak_info = (struct pak_file_info *)malloc(sizeof(struct pak_file_info));
 				temp_fpak_info->pak_no = 0;	
@@ -93,10 +90,10 @@ printf("-----%d\n",temp);
 				memcpy((new_pak + hdrs_len), (data + data_offset), size);
 				temp_fpak_info->pak_hdr.caplen = temp_fpak_info->pak_hdr.len = temp_fpak_info->pak_len = (hdrs_len + size);
 				ip_hdr_new = (struct iphdr *)(new_pak + ip_offset);
-				ip_hdr_new->tot_len = ip_hdr->ihl + size;
-				ip_hdr_new->frag_off = setbits(ip_hdr_new->frag_off, 12, 13, (data_offset / 8));
-				ip_hdr->frag_off = setbits(ip_hdr->frag_off, 13, 1, 1);
-
+				ip_hdr_new->tot_len = htons((ip_hdr->ihl * 4) + size);
+				ip_hdr_new->frag_off = 0;
+				ip_hdr_new->frag_off = htons(setbits(ntohs(ip_hdr_new->frag_off), 12, 13, (data_offset / 8)));
+				ip_hdr_new->frag_off |= htons(setbits(ntohs(ip_hdr->frag_off), 13, 1, 1));
 				if (data_offset == 0) {
 					last = fpak_info->next;
 					fpak_info->prev->next = temp_fpak_info; 
@@ -104,19 +101,27 @@ printf("-----%d\n",temp);
 					temp_fpak_info->next = last; 
 				} else {
 					temp_fpak_info->prev = temp_fpak_prev;
-					temp_fpak_prev->prev = temp_fpak_info;
+					temp_fpak_prev->next = temp_fpak_info;
 					temp_fpak_info->next = last; 
+					if (last != NULL) {
+						last->prev = temp_fpak_info;
+					}
 				}
 
 				data_offset += size;
-				if (data_offset == data_len) {
-					ip_hdr->frag_off = setbits(ip_hdr->frag_off, 13, 1, 0);
+				if (data_offset >= data_len) {
+					ip_hdr_new->frag_off &= 0xFFDF;
+					pad = data_offset - data_len;
+					if (pad > 0) {
+						ip_hdr_new->tot_len = htons((ip_hdr->ihl * 4) + size - pad);
+					}
 				}
+				ip_hdr_new->check = 0;
+				ip_hdr_new->check = in_cksum(ip_hdr_new, ip_hdr_new->ihl*4);
 				temp_fpak_prev = temp_fpak_info;	
 				if (data_offset >= (fpak_info->pak_hdr.caplen - hdrs_len)) {
 					break;
 				}
-printf("--%d\n",data_offset);
 			}
 		}
 	}

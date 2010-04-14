@@ -278,6 +278,75 @@ file_save_as_end:
 	gtk_widget_destroy (dialog);
 }
 
+void
+time_elapsed(struct timeval *buffer, char *time)
+{
+        gint32 sec=0, usec=0;
+        double timeelapsed;
+
+        sec = buffer->tv_sec - tsec;
+        usec = buffer->tv_usec - tusec;
+        timeelapsed = (double)usec/1000000 + (double)sec;
+
+        sprintf(time,"%f",timeelapsed);
+}
+
+void
+append_pl_tree_data(int no, const char *time, const char *srcip, const char *dstip, char *proto, char *info, char *color, gboolean color_set)
+{
+
+        gtk_tree_store_append (pl_store, &pl_iter, NULL);
+        gtk_tree_store_set (pl_store, &pl_iter, 0, no, 1, time,
+                2, srcip, 3, dstip, 4, proto, 5, info, 6, color, -1);
+
+}
+
+void
+pl_display_modified_iter()
+{
+        uint32_t i = 0;
+        struct pl_decap_pak_info pak_info;
+        struct pak_file_info *temp_file_pak_info = po_info;
+        char time[40];
+
+
+        pak_info.src_mac = NULL;
+        pak_info.dst_mac = NULL;
+        pak_info.src_ip = NULL;
+        pak_info.dst_ip = NULL;
+        pak_info.proto = 0;
+        pak_info.eth_proto = 0;
+        gtk_tree_store_clear(pl_store);
+        while(temp_file_pak_info = temp_file_pak_info->next) {
+                i++;
+                if (i == 1) {
+                        fpak_curr_info = temp_file_pak_info;
+                }
+                if (temp_file_pak_info->mem_alloc == 1) {
+                        p->buffer = temp_file_pak_info->pak;
+                        p->cap_len = temp_file_pak_info->pak_len;
+                } else {
+                        fseek(p->rfile,temp_file_pak_info->offset,0);
+                        p->buffer = p->base;
+                        pcap_offline_read(p,1);
+                }
+                if (!pl_decap_pak(p->buffer,&pak_info)) {
+                        time_elapsed(&(temp_file_pak_info->pak_hdr.ts), time);
+                        append_pl_tree_data (i, time,
+                                pak_info.src_mac, pak_info.dst_mac, pak_info.protocol, pak_info.info, pak_info.row_color, TRUE);
+                } else {
+                        time_elapsed(&(temp_file_pak_info->pak_hdr.ts), time);
+                        append_pl_tree_data (i, time,
+                                pak_info.src_ip, pak_info.dst_ip, pak_info.protocol, pak_info.info, pak_info.row_color, TRUE);
+                }
+                free_pl_decap_pak_info(&pak_info);
+                temp_file_pak_info->pak_no = i;
+        }
+
+
+}
+
+
 static void
 fragment_packets (GtkWidget *w,
           gpointer   data )
@@ -324,6 +393,7 @@ fragment_packets (GtkWidget *w,
 		}			
 
 	}
+	pl_display_modified_iter();
 	gtk_widget_destroy (dialog);
 	
 
@@ -403,16 +473,6 @@ display_p_tree_data(uint8_t *pak)
 {
 
 	display_pak(pak);
-
-}
-
-void
-append_pl_tree_data(int no, const char *time, const char *srcip, const char *dstip, char *proto, char *info, char *color, gboolean color_set)
-{
-
-        gtk_tree_store_append (pl_store, &pl_iter, NULL);
-        gtk_tree_store_set (pl_store, &pl_iter, 0, no, 1, time,
-                2, srcip, 3, dstip, 4, proto, 5, info, 6, color, -1);
 
 }
 
@@ -505,19 +565,6 @@ append_hex_data(char *hex_data, uint16_t len)
 
 }
 
-void
-time_elapsed(struct timeval *buffer, char *time)
-{
-	gint32 sec=0, usec=0;
-	double timeelapsed;
-
-	sec = buffer->tv_sec - tsec;
-	usec = buffer->tv_usec - tusec;
-	timeelapsed = (double)usec/1000000 + (double)sec;
-
-	sprintf(time,"%f",timeelapsed);
-}
-
 uint8_t
 display_pcap(char *filename)
 {
@@ -601,51 +648,6 @@ pl_display_modified_list()
                	}
 		free_pl_decap_pak_info(&pak_info);
 	}
-}
-
-void
-pl_display_modified_iter()
-{
-        uint32_t i = 0;
-        struct pl_decap_pak_info pak_info;
-	struct pak_file_info *temp_file_pak_info = po_info;
-	char time[40];
-
-
-	pak_info.src_mac = NULL;
-	pak_info.dst_mac = NULL;
-	pak_info.src_ip = NULL;
-	pak_info.dst_ip = NULL;
-	pak_info.proto = 0;
-	pak_info.eth_proto = 0;
-        gtk_tree_store_clear(pl_store);
-        while(temp_file_pak_info = temp_file_pak_info->next) {
-		i++;
-		if (i == 1) {
-			fpak_curr_info = temp_file_pak_info;
-		}
-                if (temp_file_pak_info->pak != NULL) {
-                        p->buffer = temp_file_pak_info->pak;
-                        p->cap_len = temp_file_pak_info->pak_len;
-                } else {
-                        fseek(p->rfile,temp_file_pak_info->offset,0);
-                        p->buffer = p->base;
-                        pcap_offline_read(p,1);
-                }
-                if (!pl_decap_pak(p->buffer,&pak_info)) {
-			time_elapsed(&(temp_file_pak_info->pak_hdr.ts), time);
-                        append_pl_tree_data (i, time,
-                                pak_info.src_mac, pak_info.dst_mac, pak_info.protocol, pak_info.info, pak_info.row_color, TRUE);
-                } else {
-			time_elapsed(&(temp_file_pak_info->pak_hdr.ts), time);
-                        append_pl_tree_data (i, time,
-                                pak_info.src_ip, pak_info.dst_ip, pak_info.protocol, pak_info.info, pak_info.row_color, TRUE);
-                }
-                free_pl_decap_pak_info(&pak_info);
-		temp_file_pak_info->pak_no = i;
-        }
-
-
 }
 
 void
