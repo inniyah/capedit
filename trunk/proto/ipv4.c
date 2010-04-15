@@ -65,6 +65,8 @@ display_ipv4(uint8_t **pak)
 {
 	struct iphdr *ip_hdr;
 	uint32_t temp;
+	uint16_t offset;
+	uint16_t mf_flag;
 
 	ip_hdr = (struct iphdr *)*pak;
 	ptree_append ("Internet Protocol(IPv4)",NULL,STRING,0, P_IPV4, 0);	
@@ -81,9 +83,9 @@ display_ipv4(uint8_t **pak)
 	ptree_append("Reserved bit:", &temp, UINT8, 2, P_IPV4, 0);
         temp = pak_get_bits_uint16(ip_hdr->frag_off, 14, 1);
         ptree_append("Don't fragment:", &temp, UINT8, 2, P_IPV4, 0);
-        temp = pak_get_bits_uint16(ip_hdr->frag_off, 13, 1);
+        mf_flag = temp = pak_get_bits_uint16(ip_hdr->frag_off, 13, 1);
         ptree_append("More fragments:", &temp, UINT8, 2, P_IPV4, 0);
-	temp = pak_get_bits_uint16(ip_hdr->frag_off, 12, 13);
+	offset = temp = pak_get_bits_uint16(ip_hdr->frag_off, 12, 13);
         ptree_append("Fragment offset:",&temp,UINT16HD,1, P_IPV4, 0);
         ptree_append("Time to live:",&ip_hdr->ttl,UINT8,1, P_IPV4, 0);
         ptree_append("Protocol:",&ip_hdr->protocol,UINT8,1, P_IPV4, 0);
@@ -97,6 +99,9 @@ display_ipv4(uint8_t **pak)
 	*pak += (ip_hdr->ihl * 4);
 	cur_pak_info.L4_off = cur_pak_info.L3_off + (ip_hdr->ihl * 4);
 	cur_pak_info.L4_proto = ip_hdr->protocol;
+        if ((mf_flag == 1) || (offset > 0)) {
+		return 0;
+        }
 	return cur_pak_info.L4_proto;
 }
 

@@ -147,9 +147,10 @@ pak_list_del_node(uint32_t no)
 
 	cur_temp = cur->prev;
 	cur->prev->next = cur->next;
-	cur->next->prev = cur_temp;
-
-	if (cur->pak != NULL) {
+	if (cur->next != NULL) {
+		cur->next->prev = cur_temp;
+	}
+	if (cur->mem_alloc == 1) {
 		free(cur->pak);
 	}
 	free(cur);
@@ -160,22 +161,17 @@ pak_list_del_node(uint32_t no)
 uint8_t
 pak_list_dup_node(uint32_t no)
 {
-        struct pak_file_info *cur = po_info;
+        struct pak_file_info *cur;
         struct pak_file_info *cur_temp = NULL;
 	struct pak_file_info *temp;
         uint32_t pak_count = no-1;
 
-        while(cur->pak_no != no) {
-                cur = cur->next;
-                if (cur == NULL) {
-                        return (0);
-                }
-        }
+	cur = pak_list_get(no);
 
         temp = (struct pak_file_info *)malloc(sizeof(struct pak_file_info));
 	memcpy(temp, cur, sizeof(struct pak_file_info));	
 
-	temp->mem_alloc = 1;
+	temp->mem_alloc = 0;
 	cur->next = temp;
 	temp->prev = cur;
 
@@ -309,7 +305,6 @@ pl_display_modified_iter()
         struct pl_decap_pak_info pak_info;
         struct pak_file_info *temp_file_pak_info = po_info;
         char time[40];
-
 
         pak_info.src_mac = NULL;
         pak_info.dst_mac = NULL;
@@ -907,13 +902,18 @@ cell_edited (GtkCellRendererText *renderer,
 	struct pl_decap_pak_info *pak_info;
 	char time[40];
 	gint i;
+	struct pak_file_info *fpak_temp;
 	
+	fpak_temp = fpak_curr_info;
 	pak_info = malloc_pl_decap_pak_info();
 	if (g_ascii_strcasecmp (new_text, "") != 0)
 	{
 		model = gtk_tree_view_get_model (treeview);
 		if (gtk_tree_model_get_iter_from_string (model, &iter, path)) {
 			if (fpak_curr_info->mem_alloc == 0) {
+                                fseek(p->rfile,fpak_curr_info->offset,0);
+                                p->buffer = p->base;
+                                pcap_offline_read(p,1);
 				fpak_curr_info->pak = malloc(p->cap_len);
     				memcpy(fpak_curr_info->pak,p->buffer,p->cap_len);
 				fpak_curr_info->pak_len = p->cap_len;
@@ -953,6 +953,7 @@ cell_edited (GtkCellRendererText *renderer,
 			}
 		}
 	}
+	fpak_curr_info = fpak_temp;
 	free_pl_decap_pak_info(pak_info);
 	gtk_tree_view_expand_all (GTK_TREE_VIEW (p_treeview));
 }
@@ -1069,6 +1070,7 @@ pl_cur_changed(GtkTreeView *treeview)
     gtk_text_buffer_delete(hex_buffer, &start, &end);
 
     display_p_tree_data(p->buffer);
+    gtk_tree_view_expand_all (GTK_TREE_VIEW (p_treeview));
     append_hex_data(p->buffer,p->cap_len);
   }
 }
@@ -1603,7 +1605,9 @@ void
 send_pak() {
         gchar *string;
 	uint32_t i;
+	struct pak_file_info *fpak_temp;
 
+	fpak_temp = fpak_curr_info;
         string = (gchar *)gtk_entry_get_text (GTK_ENTRY (GTK_COMBO (intf_combo)->entry));
 
 	if (p == NULL) {
@@ -1625,7 +1629,7 @@ send_pak() {
 		SendPak(string,p->buffer, p->cap_len);
 	}
 send_pak_end:
-	;
+	fpak_curr_info = fpak_temp;
 }
 void
 create_tool_bar()
