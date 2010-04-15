@@ -59,7 +59,7 @@ frag_pak (struct pak_file_info *fpak_info, uint16_t size)
 	protocol = ntohs(eth_hdr->h_proto);
 	pak += sizeof(struct ethhdr);
 	hdrs_len += sizeof(struct ethhdr);
-        if (protocol == 0x8100) {
+        for (;protocol == 0x8100;) {
                 vlan_hdr = (struct vlan_802_1q *)pak;
                 protocol = ntohs(vlan_hdr->protocol);
                 pak += sizeof(struct vlan_802_1q);

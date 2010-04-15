@@ -299,6 +299,73 @@ append_pl_tree_data(int no, const char *time, const char *srcip, const char *dst
 }
 
 void
+append_hex_data(char *hex_data, uint16_t len)
+{
+        uint16_t i;
+        char buf[10];
+        u_char *ch;
+        ch = hex_data;
+        uint16_t offset = 0;
+
+        sprintf(buf, "%05d", offset);
+        gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
+
+        sprintf(buf, "  ");
+        gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
+
+        for (i = 0; i < len; i++) {
+                sprintf(buf,"%02X  ",*ch);
+                gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
+                ch++;
+
+                if ((((i+1) % 8) == 0)) {
+                        if (((i+1) % 16) == 0) {
+                                sprintf(buf, "\n");
+                                gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
+                                offset += 10;
+                                sprintf(buf, "%05d", offset);
+                                gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
+                                sprintf(buf, "  ");
+                                gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
+
+                        } else {
+                                sprintf(buf, "   ");
+                                gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
+                        }
+                }
+
+        }
+
+}
+
+
+void
+p_display_modified()
+{
+    GtkTextIter start, end;
+
+    if (fpak_curr_info->mem_alloc == 0) {
+        fseek(p->rfile,fpak_curr_info->offset,0);
+        p->buffer = p->base;
+        pcap_offline_read(p,1);
+    } else {
+        p->buffer = fpak_curr_info->pak;
+        p->cap_len = fpak_curr_info->pak_len;
+    }
+
+    gtk_tree_store_clear(p_store);
+
+    gtk_text_buffer_get_start_iter(hex_buffer, &start);
+    gtk_text_buffer_get_end_iter(hex_buffer, &end);
+    gtk_text_buffer_delete(hex_buffer, &start, &end);
+
+    display_p_tree_data(p->buffer);
+    append_hex_data(p->buffer,p->cap_len);
+
+}
+
+
+void
 pl_display_modified_iter()
 {
         uint32_t i = 0;
@@ -315,9 +382,9 @@ pl_display_modified_iter()
         gtk_tree_store_clear(pl_store);
         while(temp_file_pak_info = temp_file_pak_info->next) {
                 i++;
-                if (i == 1) {
-                        fpak_curr_info = temp_file_pak_info;
-                }
+		if ((i == 1) && (fpak_curr_info == NULL)) {
+			fpak_curr_info = temp_file_pak_info;
+		}
                 if (temp_file_pak_info->mem_alloc == 1) {
                         p->buffer = temp_file_pak_info->pak;
                         p->cap_len = temp_file_pak_info->pak_len;
@@ -338,7 +405,13 @@ pl_display_modified_iter()
                 free_pl_decap_pak_info(&pak_info);
                 temp_file_pak_info->pak_no = i;
         }
+	p_display_modified();
+}
 
+static void
+add_mpls_tag (GtkWidget *w,
+          gpointer   data )
+{
 
 }
 
@@ -354,6 +427,7 @@ add_vlan_tag (GtkWidget *w,
         const gchar *p_priority, *p_cfi, *p_id;
         uint32_t i;
 	uint16_t priority_val = 0, cfi_val = 0, id_val = 100;
+	struct pak_file_info *fpak_info;
 
         dialog = gtk_dialog_new_with_buttons ("VLAN values", NULL,
                                                 GTK_DIALOG_MODAL,
@@ -404,10 +478,10 @@ add_vlan_tag (GtkWidget *w,
 		id_val	     = atoi(p_id);
 
                 err_val = 0;
-		fpak_curr_info = pak_list_get(1);
-                for (; fpak_curr_info == NULL; ) {
-			add_vtag(fpak_curr_info, priority_val, cfi_val, id_val);
-			fpak_curr_info = fpak_curr_info->next;
+		fpak_info = pak_list_get(1);
+                for (; fpak_info != NULL; ) {
+			add_vtag(fpak_info, priority_val, cfi_val, id_val);
+			fpak_info = fpak_info->next;
                 }
                 pl_display_modified_iter();
         }
@@ -591,47 +665,6 @@ print_hex_ascii_line(const u_char *payload, int len)
 return;
 }
 
-
-void
-append_hex_data(char *hex_data, uint16_t len)
-{
-	uint16_t i;
-	char buf[10];
-	u_char *ch;
-	ch = hex_data;
-	uint16_t offset = 0;
-
-	sprintf(buf, "%05d", offset);
-	gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);	
-
-	sprintf(buf, "  ");
-        gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
-
-	for (i = 0; i < len; i++) {	
-		sprintf(buf,"%02X  ",*ch);
-		gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
-		ch++;
-
-		if ((((i+1) % 8) == 0)) {
-			if (((i+1) % 16) == 0) {
-				sprintf(buf, "\n");
-				gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
-				offset += 10;
-				sprintf(buf, "%05d", offset);
-        			gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
-                                sprintf(buf, "  ");
-                                gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
-
-			} else {
-				sprintf(buf, "   ");
-				gtk_text_buffer_insert_at_cursor (hex_buffer, buf , -1);
-			}
-		}
-			
-	}
-
-}
-
 uint8_t
 display_pcap(char *filename)
 {
@@ -749,6 +782,7 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/_Edit",         NULL,         NULL,           0, "<Branch>" },
   { "/Edit/_Fragment Packets",    "<control>F", fragment_packets, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
   { "/Edit/_Add VLAN Tag",    "<control>V", add_vlan_tag, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
+  { "/Edit/_Add MPLS Tag(To be Done.)",    "<control>M", add_mpls_tag, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
   { "/_Help",         NULL,         NULL,           0, "<Branch>" },
   { "/_Help/About",   NULL,         NULL,           0, "<Item>" },
 };
@@ -863,31 +897,6 @@ setup_pl_tree_view (GtkWidget *treeview)
                NULL);
    gtk_tree_view_column_set_cell_data_func (column, renderer,
    cell_data_func, NULL, NULL);
-}
-
-void
-p_display_modified()
-{
-    GtkTextIter start, end;
-
-    if (fpak_curr_info->mem_alloc == 0) {
-        fseek(p->rfile,fpak_curr_info->offset,0);
-        p->buffer = p->base;
-        pcap_offline_read(p,1);
-    } else {
-        p->buffer = fpak_curr_info->pak;
-        p->cap_len = fpak_curr_info->pak_len;
-    }
-
-    gtk_tree_store_clear(p_store);
-
-    gtk_text_buffer_get_start_iter(hex_buffer, &start);
-    gtk_text_buffer_get_end_iter(hex_buffer, &end);
-    gtk_text_buffer_delete(hex_buffer, &start, &end);
-
-    display_p_tree_data(p->buffer);
-    append_hex_data(p->buffer,p->cap_len);
-
 }
 
 static void
@@ -1338,6 +1347,84 @@ pl_view_popup_menu_dup_pak (GtkWidget *menuitem, gpointer userdata)
 }
 
 void
+pl_view_popup_menu_add_vtag (GtkWidget *menuitem, gpointer userdata)
+{
+        GtkTreeSelection *selection;
+        GtkTreeModel     *model;
+        GtkTreeIter       iter;
+        struct stream_values;
+        GtkWidget *dialog, *table, *priority, *cfi, *id;
+        GtkWidget *lbl1, *lbl2, *lbl3;
+        gint result;
+        char *s_val;
+        const gchar *p_priority, *p_cfi, *p_id;
+        uint32_t i;
+        uint16_t priority_val = 0, cfi_val = 0, id_val = 100;
+        struct pak_file_info *fpak_info;
+
+        dialog = gtk_dialog_new_with_buttons ("VLAN values", NULL,
+                                                GTK_DIALOG_MODAL,
+                                                GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                NULL);
+
+        gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_OK);
+        /* Create four entries that will tell the user what data to enter. */
+        lbl1 = gtk_label_new ("Priority:");
+        lbl2 = gtk_label_new ("CFI:");
+        lbl3 = gtk_label_new ("VLAN ID:");
+
+        priority   = gtk_entry_new ();
+        cfi   = gtk_entry_new ();
+        id    = gtk_entry_new ();
+
+        //get_stream_values();
+        /* Retrieve the user's information for the default values. */
+        gtk_entry_set_text (GTK_ENTRY (priority), "0");
+        gtk_entry_set_text (GTK_ENTRY (cfi), "0");
+        gtk_entry_set_text (GTK_ENTRY (id), "100");
+
+        table = gtk_table_new (3, 2, FALSE);
+
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl1, 0, 1, 0, 1);
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl2, 0, 1, 1, 2);
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl3, 0, 1, 2, 3);
+        gtk_table_attach_defaults (GTK_TABLE (table), priority, 1, 2, 0, 1);
+        gtk_table_attach_defaults (GTK_TABLE (table), cfi, 1, 2, 1, 2);
+        gtk_table_attach_defaults (GTK_TABLE (table), id, 1, 2, 2, 3);
+        gtk_table_set_row_spacings (GTK_TABLE (table), 5);
+        gtk_table_set_col_spacings (GTK_TABLE (table), 5);
+        gtk_container_set_border_width (GTK_CONTAINER (table), 5);
+        gtk_box_pack_start_defaults (GTK_BOX (GTK_DIALOG (dialog)->vbox), table);
+        gtk_widget_show_all (dialog);
+
+        result = gtk_dialog_run (GTK_DIALOG (dialog));
+        if (result == GTK_RESPONSE_OK)
+        {
+                p_priority  =  gtk_entry_get_text (GTK_ENTRY (priority));
+                p_cfi       =  gtk_entry_get_text (GTK_ENTRY (cfi));
+                p_id        =  gtk_entry_get_text (GTK_ENTRY (id));
+
+                priority_val = atoi(p_priority);
+                cfi_val      = atoi(p_cfi);
+                id_val       = atoi(p_id);
+
+                err_val = 0;
+                selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(pl_treeview));
+                if (gtk_tree_selection_get_selected(selection, &model, &iter))
+                {
+                        gint no;
+                        gtk_tree_model_get (model, &iter, 0, &no, -1);
+                        fpak_info = pak_list_get(no);
+                        add_vtag(fpak_info, priority_val, cfi_val, id_val);
+                }
+
+        }
+        pl_display_modified_iter();
+        gtk_widget_destroy (dialog);
+}
+
+void
 pl_view_popup_menu_frag_pak (GtkWidget *menuitem, gpointer userdata)
 {
 	GtkTreeSelection *selection;
@@ -1395,7 +1482,7 @@ pl_view_popup_menu_frag_pak (GtkWidget *menuitem, gpointer userdata)
 void
 pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
 {
-    GtkWidget *menu, *stream_val, *ip_val, *del_val, *dup_val, *frag_val;
+    GtkWidget *menu, *stream_val, *ip_val, *del_val, *dup_val, *frag_val, *vtag_val;
  
     menu = gtk_menu_new();
  
@@ -1404,6 +1491,7 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
     del_val    = gtk_menu_item_new_with_label("Delete Packet");
     dup_val    = gtk_menu_item_new_with_label("Create Duplicate");
     frag_val   = gtk_menu_item_new_with_label("Fragment Packet");
+    vtag_val   = gtk_menu_item_new_with_label("Add VLAN Tag");
  
     
     g_signal_connect(stream_val, "activate",
@@ -1416,6 +1504,8 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
                      (GCallback) pl_view_popup_menu_dup_pak, pl_treeview);
     g_signal_connect(frag_val, "activate",
                      (GCallback) pl_view_popup_menu_frag_pak, pl_treeview);
+    g_signal_connect(vtag_val, "activate",
+                     (GCallback) pl_view_popup_menu_add_vtag, pl_treeview);
 
  
     if ((cur_pak_info.L4_proto == 0x11) || (cur_pak_info.L4_proto == 0x06)) {
@@ -1427,6 +1517,7 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
     }
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), del_val);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), dup_val);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), vtag_val);
  
     gtk_widget_show_all(menu);
  

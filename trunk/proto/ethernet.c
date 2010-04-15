@@ -52,8 +52,10 @@ display_ether(uint8_t **pak)
 	
 	h_proto = ntohs(eth_hdr->h_proto);
 
-	if (h_proto == 0x8100) {
-		*pak += sizeof(struct ethhdr);
+	cur_pak_info.L3_off = sizeof(struct ethhdr);
+	cur_pak_info.L3_proto = ntohs(eth_hdr->h_proto);
+	*pak += sizeof(struct ethhdr);
+	for ( ;h_proto == 0x8100; ) {
 		vlan_hdr = (struct vlan_802_1q *)*pak; 
 		ptree_append("802.1Q Virtual LAN", NULL, STRING, 0, P_VLAN_802_1Q, 0);
 		i16 = *(uint16_t *)vlan_hdr;
@@ -65,10 +67,9 @@ display_ether(uint8_t **pak)
 		ptree_append("ID", &i16_2, UINT16D, 1, P_VLAN_802_1Q, 0);
 		ptree_append("Type", &vlan_hdr->protocol, UINT16_HEX, 1, P_VLAN_802_1Q, 0);
 
-		cur_pak_info.L3_off = sizeof(struct ethhdr) + sizeof(struct vlan_802_1q); 
+		cur_pak_info.L3_off += sizeof(struct vlan_802_1q); 
 		*pak += sizeof(struct vlan_802_1q);
-		cur_pak_info.L3_proto = ntohs(vlan_hdr->protocol);
-		h_proto = cur_pak_info.L3_proto;
+		h_proto = cur_pak_info.L3_proto = ntohs(vlan_hdr->protocol);
 	} 
 	if (h_proto == 0x8847) {
 		if (!(ntohs(eth_hdr->h_proto) == 0x8100)) {
@@ -89,15 +90,6 @@ display_ether(uint8_t **pak)
 		*pak += sizeof(struct mplshdr);
 		cur_pak_info.L3_proto = 0x0800;
 	} 
-	if ((h_proto == 0x0800) || (h_proto == 0x0806)){
-		cur_pak_info.L3_off = sizeof(struct ethhdr);
-		*pak += sizeof(struct ethhdr); 
-		cur_pak_info.L3_proto = ntohs(eth_hdr->h_proto);
-	} else {
-                cur_pak_info.L3_off = sizeof(struct ethhdr);
-                *pak += sizeof(struct ethhdr);
-                cur_pak_info.L3_proto = ntohs(eth_hdr->h_proto);
-	}
 	return cur_pak_info.L3_proto;
 }
 

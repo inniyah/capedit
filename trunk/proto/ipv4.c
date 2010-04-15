@@ -65,8 +65,8 @@ display_ipv4(uint8_t **pak)
 {
 	struct iphdr *ip_hdr;
 	uint32_t temp;
-	uint16_t offset;
-	uint16_t mf_flag;
+	uint16_t offset = 0;
+	uint16_t mf_flag = 0;
 
 	ip_hdr = (struct iphdr *)*pak;
 	ptree_append ("Internet Protocol(IPv4)",NULL,STRING,0, P_IPV4, 0);	
@@ -98,10 +98,11 @@ display_ipv4(uint8_t **pak)
 	cur_pak_info.proto  = ip_hdr->protocol;
 	*pak += (ip_hdr->ihl * 4);
 	cur_pak_info.L4_off = cur_pak_info.L3_off + (ip_hdr->ihl * 4);
-	cur_pak_info.L4_proto = ip_hdr->protocol;
         if ((mf_flag == 1) || (offset > 0)) {
+		cur_pak_info.L4_proto = 0;
 		return 0;
         }
+	cur_pak_info.L4_proto = ip_hdr->protocol;
 	return cur_pak_info.L4_proto;
 }
 

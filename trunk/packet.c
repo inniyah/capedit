@@ -60,7 +60,7 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 
 
 	tptr += sizeof(struct ethhdr);
-	if (pak_info->eth_proto == 0x8100) {
+	for (;pak_info->eth_proto == 0x8100;) {
 		vlan_hdr = (struct vlan_802_1q *)tptr;
 		pak_info->eth_proto = ntohs(vlan_hdr->protocol);
 		tptr += sizeof(struct vlan_802_1q);
