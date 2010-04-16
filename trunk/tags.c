@@ -56,10 +56,10 @@ add_mtag (struct pak_file_info *fpak_info, uint16_t label, uint16_t exp, uint16_
 	mpls_hdr.ttl   = ttl;
 
 	for (;protocol == 0x0081;) { //vlan
-		vlan_hdr = (struct vlanhdr *)pak_temp;
+		vlan_hdr = (struct vlan_802_1q *)pak_temp;
 		protocol = vlan_hdr->protocol;
-		hdrs_len += sizeof(struct vlanhdr);
-		pak_temp += sizeof(struct vlanhdr);	
+		hdrs_len += sizeof(struct vlan_802_1q);
+		pak_temp += sizeof(struct vlan_802_1q);	
 	}
 	
 	if (protocol != 0x0008) {
@@ -67,10 +67,10 @@ add_mtag (struct pak_file_info *fpak_info, uint16_t label, uint16_t exp, uint16_
 	}
 	eth_hdr->h_proto = 0x4788; /*MPLS*/
         new_pak = (uint8_t *)malloc(fpak_info->pak_hdr.caplen + sizeof(struct mplshdr));
-        memcpy(new_pak, pak, sizeof(struct ethhdr));
-        memcpy((new_pak + sizeof(struct ethhdr)), (uint8_t *)&mpls_hdr, sizeof(struct mplshdr));
-        memcpy((new_pak + sizeof(struct ethhdr) + sizeof(struct mplshdr)),
-                (pak + sizeof(struct ethhdr)), (fpak_info->pak_hdr.caplen - sizeof(struct ethhdr)));
+        memcpy(new_pak, pak, hdrs_len);
+        memcpy((new_pak + hdrs_len, (uint8_t *)&mpls_hdr, sizeof(struct mplshdr)));
+        memcpy((new_pak + hdrs_len + sizeof(struct mplshdr)),
+                pak + hdrs_len, (fpak_info->pak_hdr.caplen - hdrs_len));
         if (fpak_info->mem_alloc == 1) {
                 free(fpak_info->pak);
         }
