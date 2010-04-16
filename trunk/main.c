@@ -412,6 +412,79 @@ static void
 add_mpls_tag (GtkWidget *w,
           gpointer   data )
 {
+        GtkWidget *dialog, *table, *label, *exp, *stack, *ttl;
+        GtkWidget *lbl1, *lbl2, *lbl3, *lbl4;
+        gint result;
+        char *s_val;
+        const gchar *p_label, *p_exp, *p_stack, *p_ttl;
+        uint32_t i;
+        uint16_t label_val = 10, exp_val = 0, stack_val = 1, ttl_val = 64;
+        struct pak_file_info *fpak_info;
+
+        dialog = gtk_dialog_new_with_buttons ("MPLS values", NULL,
+                                                GTK_DIALOG_MODAL,
+                                                GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                NULL);
+
+        gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_OK);
+        /* Create four entries that will tell the user what data to enter. */
+        lbl1 = gtk_label_new ("MPLS Label:");
+        lbl2 = gtk_label_new ("MPLS Experimental Bits:");
+        lbl3 = gtk_label_new ("MPLS Bottom Of Label Stack:");
+	lbl4 = gtk_label_new ("MPLS TTL:");
+
+        label    = gtk_entry_new ();
+        exp      = gtk_entry_new ();
+        stack    = gtk_entry_new ();
+	ttl	 = gtk_entry_new ();
+
+        //get_stream_values();
+        /* Retrieve the user's information for the default values. */
+        gtk_entry_set_text (GTK_ENTRY (label), "10");
+        gtk_entry_set_text (GTK_ENTRY (exp), "0");
+        gtk_entry_set_text (GTK_ENTRY (stack), "1");
+	gtk_entry_set_text (GTK_ENTRY (ttl), "64");
+
+        table = gtk_table_new (4, 2, FALSE);
+
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl1, 0, 1, 0, 1);
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl2, 0, 1, 1, 2);
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl3, 0, 1, 2, 3);
+	gtk_table_attach_defaults (GTK_TABLE (table), lbl4, 0, 1, 3, 4);
+        gtk_table_attach_defaults (GTK_TABLE (table), label, 1, 2, 0, 1);
+        gtk_table_attach_defaults (GTK_TABLE (table), exp, 1, 2, 1, 2);
+        gtk_table_attach_defaults (GTK_TABLE (table), stack, 1, 2, 2, 3);
+	gtk_table_attach_defaults (GTK_TABLE (table), ttl, 1, 2, 3, 4);
+        gtk_table_set_row_spacings (GTK_TABLE (table), 5);
+        gtk_table_set_col_spacings (GTK_TABLE (table), 5);
+        gtk_container_set_border_width (GTK_CONTAINER (table), 5);
+        gtk_box_pack_start_defaults (GTK_BOX (GTK_DIALOG (dialog)->vbox), table);
+        gtk_widget_show_all (dialog);
+
+        /* Run the dialog and output the data if the user clicks the OK button. */
+        result = gtk_dialog_run (GTK_DIALOG (dialog));
+        if (result == GTK_RESPONSE_OK)
+        {
+                p_label     =  gtk_entry_get_text (GTK_ENTRY (label));
+                p_exp       =  gtk_entry_get_text (GTK_ENTRY (exp));
+                p_stack     =  gtk_entry_get_text (GTK_ENTRY (stack));
+		p_ttl       =  gtk_entry_get_text (GTK_ENTRY (ttl));
+
+                label_val = atoi(p_label);
+                exp_val   = atoi(p_exp);
+                stack_val = atoi(p_stack);
+		ttl_val	  = atoi(p_ttl);	
+
+                err_val = 0;
+                fpak_info = pak_list_get(1);
+                for (; fpak_info != NULL; ) {
+                        add_mtag(fpak_info, label_val, exp_val, stack_val, ttl_val);
+                        fpak_info = fpak_info->next;
+                }
+                pl_display_modified_iter();
+        }
+        gtk_widget_destroy (dialog);
 
 }
 
@@ -419,7 +492,6 @@ static void
 add_vlan_tag (GtkWidget *w,
           gpointer   data )
 {
-        struct stream_values;
         GtkWidget *dialog, *table, *priority, *cfi, *id;
         GtkWidget *lbl1, *lbl2, *lbl3;
         gint result;
@@ -782,7 +854,7 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/_Edit",         NULL,         NULL,           0, "<Branch>" },
   { "/Edit/_Fragment Packets",    "<control>F", fragment_packets, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
   { "/Edit/_Add VLAN Tag",    "<control>V", add_vlan_tag, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
-  { "/Edit/_Add MPLS Tag(To be Done.)",    "<control>M", add_mpls_tag, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
+  { "/Edit/_Add MPLS Tag",    "<control>M", add_mpls_tag, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
   { "/_Help",         NULL,         NULL,           0, "<Branch>" },
   { "/_Help/About",   NULL,         NULL,           0, "<Item>" },
 };
@@ -1347,12 +1419,95 @@ pl_view_popup_menu_dup_pak (GtkWidget *menuitem, gpointer userdata)
 }
 
 void
+pl_view_popup_menu_add_mtag (GtkWidget *menuitem, gpointer userdata)
+{
+        GtkTreeSelection *selection;
+        GtkTreeModel     *model;
+        GtkTreeIter       iter;
+        GtkWidget *dialog, *table, *label, *exp, *stack, *ttl;
+        GtkWidget *lbl1, *lbl2, *lbl3, *lbl4;
+        gint result;
+        char *s_val;
+        const gchar *p_label, *p_exp, *p_stack, *p_ttl;
+        uint32_t i;
+        uint16_t label_val = 10, exp_val = 0, stack_val = 1, ttl_val = 64;
+        struct pak_file_info *fpak_info;
+
+        dialog = gtk_dialog_new_with_buttons ("MPLS values", NULL,
+                                                GTK_DIALOG_MODAL,
+                                                GTK_STOCK_OK, GTK_RESPONSE_OK,
+                                                GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                                                NULL);
+
+        gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_OK);
+        /* Create four entries that will tell the user what data to enter. */
+        lbl1 = gtk_label_new ("MPLS Label:");
+        lbl2 = gtk_label_new ("MPLS Experimental Bits:");
+        lbl3 = gtk_label_new ("MPLS Bottom Of Label Stack:");
+        lbl4 = gtk_label_new ("MPLS TTL:");
+
+        label    = gtk_entry_new ();
+        exp      = gtk_entry_new ();
+        stack    = gtk_entry_new ();
+        ttl      = gtk_entry_new ();
+
+        //get_stream_values();
+        /* Retrieve the user's information for the default values. */
+        gtk_entry_set_text (GTK_ENTRY (label), "10");
+        gtk_entry_set_text (GTK_ENTRY (exp), "0");
+        gtk_entry_set_text (GTK_ENTRY (stack), "1");
+        gtk_entry_set_text (GTK_ENTRY (ttl), "64");
+
+        table = gtk_table_new (4, 2, FALSE);
+
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl1, 0, 1, 0, 1);
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl2, 0, 1, 1, 2);
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl3, 0, 1, 2, 3);
+        gtk_table_attach_defaults (GTK_TABLE (table), lbl4, 0, 1, 3, 4);
+        gtk_table_attach_defaults (GTK_TABLE (table), label, 1, 2, 0, 1);
+        gtk_table_attach_defaults (GTK_TABLE (table), exp, 1, 2, 1, 2);
+        gtk_table_attach_defaults (GTK_TABLE (table), stack, 1, 2, 2, 3);
+        gtk_table_attach_defaults (GTK_TABLE (table), ttl, 1, 2, 3, 4);
+        gtk_table_set_row_spacings (GTK_TABLE (table), 5);
+        gtk_table_set_col_spacings (GTK_TABLE (table), 5);
+        gtk_container_set_border_width (GTK_CONTAINER (table), 5);
+        gtk_box_pack_start_defaults (GTK_BOX (GTK_DIALOG (dialog)->vbox), table);
+        gtk_widget_show_all (dialog);
+
+        /* Run the dialog and output the data if the user clicks the OK button. */
+	result = gtk_dialog_run (GTK_DIALOG (dialog));
+        if (result == GTK_RESPONSE_OK)
+        {
+                p_label     =  gtk_entry_get_text (GTK_ENTRY (label));
+                p_exp       =  gtk_entry_get_text (GTK_ENTRY (exp));
+                p_stack     =  gtk_entry_get_text (GTK_ENTRY (stack));
+                p_ttl       =  gtk_entry_get_text (GTK_ENTRY (ttl));
+
+                label_val = atoi(p_label);
+                exp_val   = atoi(p_exp);
+                stack_val = atoi(p_stack);
+                ttl_val   = atoi(p_ttl);    
+
+                err_val = 0;
+                selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(pl_treeview));
+                if (gtk_tree_selection_get_selected(selection, &model, &iter))
+                {
+                        gint no;
+                        gtk_tree_model_get (model, &iter, 0, &no, -1);
+                        fpak_info = pak_list_get(no);
+			add_mtag(fpak_info, label_val, exp_val, stack_val, ttl_val);
+                }
+                pl_display_modified_iter();
+        }
+        gtk_widget_destroy (dialog);
+}
+
+void
 pl_view_popup_menu_add_vtag (GtkWidget *menuitem, gpointer userdata)
 {
         GtkTreeSelection *selection;
         GtkTreeModel     *model;
         GtkTreeIter       iter;
-        struct stream_values;
         GtkWidget *dialog, *table, *priority, *cfi, *id;
         GtkWidget *lbl1, *lbl2, *lbl3;
         gint result;
@@ -1483,6 +1638,7 @@ void
 pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
 {
     GtkWidget *menu, *stream_val, *ip_val, *del_val, *dup_val, *frag_val, *vtag_val;
+    GtkWidget *mpls_val;
  
     menu = gtk_menu_new();
  
@@ -1492,6 +1648,7 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
     dup_val    = gtk_menu_item_new_with_label("Create Duplicate");
     frag_val   = gtk_menu_item_new_with_label("Fragment Packet");
     vtag_val   = gtk_menu_item_new_with_label("Add VLAN Tag");
+    mpls_val   = gtk_menu_item_new_with_label("Add MPLS Tag");
  
     
     g_signal_connect(stream_val, "activate",
@@ -1506,6 +1663,8 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
                      (GCallback) pl_view_popup_menu_frag_pak, pl_treeview);
     g_signal_connect(vtag_val, "activate",
                      (GCallback) pl_view_popup_menu_add_vtag, pl_treeview);
+    g_signal_connect(mpls_val, "activate",
+                     (GCallback) pl_view_popup_menu_add_mtag, pl_treeview);
 
  
     if ((cur_pak_info.L4_proto == 0x11) || (cur_pak_info.L4_proto == 0x06)) {
@@ -1514,6 +1673,7 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
     if (cur_pak_info.L3_proto == 0x0800) {
     	gtk_menu_shell_append(GTK_MENU_SHELL(menu), ip_val);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), frag_val);
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), mpls_val);
     }
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), del_val);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), dup_val);

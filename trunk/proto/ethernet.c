@@ -72,9 +72,6 @@ display_ether(uint8_t **pak)
 		h_proto = cur_pak_info.L3_proto = ntohs(vlan_hdr->protocol);
 	} 
 	if (h_proto == 0x8847) {
-		if (!(ntohs(eth_hdr->h_proto) == 0x8100)) {
-			*pak += sizeof(struct ethhdr);
-		}
 		mpls_hdr = (struct mplshdr *)*pak;
 		ptree_append("Multiprotocol Label Switching Protocol", NULL, STRING, 0, P_MPLS_UNICAST, 0);
 		i32 = mpls_hdr->label;

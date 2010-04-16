@@ -25,6 +25,61 @@
 #include "main.h"
 #include "proto/ethernet.h"
 
+uint8_t
+add_mtag (struct pak_file_info *fpak_info, uint16_t label, uint16_t exp, uint16_t stack, uint16_t ttl)
+{
+        struct ethhdr 	   *eth_hdr;
+        struct vlan_802_1q *vlan_hdr;
+	struct mplshdr     mpls_hdr;
+        uint8_t *pak      = NULL;
+        uint8_t *new_pak  = NULL;
+	uint8_t *pak_temp = NULL;
+        uint16_t protocol;
+	uint16_t hdrs_len = 0;
+        
+        if (fpak_info->mem_alloc == 0) {
+                fseek(p->rfile,fpak_info->offset,0);
+                p->buffer = p->base;
+                pcap_offline_read(p,1);
+                fpak_info->pak = p->buffer;
+                fpak_info->pak_len = p->cap_len;
+        }
+        pak_temp = pak      = (uint8_t *)fpak_info->pak;
+        eth_hdr  = (struct ethhdr *)pak;
+	protocol = eth_hdr->h_proto;
+	hdrs_len += sizeof(struct ethhdr); 	
+	pak_temp = pak + sizeof(struct ethhdr);
+
+	mpls_hdr.label = label;
+	mpls_hdr.exp   = exp;
+	mpls_hdr.stack = stack;
+	mpls_hdr.ttl   = ttl;
+
+	for (;protocol == 0x0081;) { //vlan
+		vlan_hdr = (struct vlanhdr *)pak_temp;
+		protocol = vlan_hdr->protocol;
+		hdrs_len += sizeof(struct vlanhdr);
+		pak_temp += sizeof(struct vlanhdr);	
+	}
+	
+	if (protocol != 0x0008) {
+		return;
+	}
+	eth_hdr->h_proto = 0x4788; /*MPLS*/
+        new_pak = (uint8_t *)malloc(fpak_info->pak_hdr.caplen + sizeof(struct mplshdr));
+        memcpy(new_pak, pak, sizeof(struct ethhdr));
+        memcpy((new_pak + sizeof(struct ethhdr)), (uint8_t *)&mpls_hdr, sizeof(struct mplshdr));
+        memcpy((new_pak + sizeof(struct ethhdr) + sizeof(struct mplshdr)),
+                (pak + sizeof(struct ethhdr)), (fpak_info->pak_hdr.caplen - sizeof(struct ethhdr)));
+        if (fpak_info->mem_alloc == 1) {
+                free(fpak_info->pak);
+        }
+        fpak_info->mem_alloc = 1;
+        fpak_info->pak = new_pak;
+        fpak_info->pak_hdr.caplen += sizeof(struct mplshdr);
+        fpak_info->pak_len = fpak_info->pak_hdr.len = fpak_info->pak_hdr.caplen;
+
+}
 
 uint8_t
 add_vtag(struct pak_file_info *fpak_info, uint16_t priority, uint16_t cfi, uint16_t id)

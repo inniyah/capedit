@@ -24,6 +24,9 @@
 #ifndef __TAGS_H__
 #define __TAGS_H__
 
+uint8_t
+add_mtag (struct pak_file_info *fpak_info, uint16_t label, uint16_t exp, uint16_t stack, uint16_t ttl);
+
 void
 add_vtag(struct pak_file_info *fpak_info, uint16_t priority, uint16_t cfi, uint16_t id);
 
