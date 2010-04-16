@@ -49,10 +49,10 @@ struct vlan_802_1q {
 } __attribute__((packed));
 
 struct mplshdr {
-	uint32_t ttl:8,	
-		 stack:1,
+	uint32_t label:20,
 		 exp:3,
-		 label:20;
+		 stack:1,
+		 ttl:8;
 };
 
 

@@ -71,6 +71,14 @@ pak_get_bits_uint16(uint16_t value, uint8_t position, uint8_t no_bits)
 }
 
 uint32_t
+pak_get_bits_uint32(uint32_t value, uint8_t position, uint8_t no_bits)
+{
+        uint32_t i32;
+        i32 = ntohl(value);
+        return getbits(i32, position, no_bits);
+}
+
+uint32_t
 setbits(uint32_t value, uint8_t position, uint8_t no_bits, uint32_t val2)
 {
 	
@@ -157,6 +165,22 @@ pak_set_bits_uint32(uint32_t param, uint8_t position, uint8_t no_bits, char *val
         return htonl(setbits(param, position, no_bits, i32));
 
 }
+
+uint32_t
+pak_set_bits_uint32D(uint32_t param, uint8_t position, uint8_t no_bits, char *value)
+{
+        uint32_t i32;
+        i32 = atoi(value);
+        if (no_bits == 1) {
+                if (!((i32 == 0) || (i32 == 1))) {
+                        err_val = 4;
+                        return;
+                }
+        }
+        param = ntohl(param);
+        return htonl(setbits(param, position, no_bits, i32));
+}
+
 
 uint32_t
 pak_set_bits_uint16_hex(uint16_t param, uint8_t position, uint8_t no_bits, char *value)

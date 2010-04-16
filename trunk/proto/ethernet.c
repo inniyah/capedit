@@ -36,9 +36,10 @@ display_ether(uint8_t **pak)
 	struct vlan_802_1q *vlan_hdr;
 	struct mplshdr *mpls_hdr;
 	uint16_t i16, i16_2;
-	uint32_t i32;
+	uint32_t i32, m32;
 	uint8_t i8;
 	uint16_t h_proto;
+	uint8_t stack = 0;
 
 	eth_hdr = (struct ethhdr *)*pak;
 	
@@ -71,21 +72,25 @@ display_ether(uint8_t **pak)
 		*pak += sizeof(struct vlan_802_1q);
 		h_proto = cur_pak_info.L3_proto = ntohs(vlan_hdr->protocol);
 	} 
-	if (h_proto == 0x8847) {
+	for (;h_proto == 0x8847;) {
 		mpls_hdr = (struct mplshdr *)*pak;
+		m32 = *(uint32_t *)mpls_hdr;
 		ptree_append("Multiprotocol Label Switching Protocol", NULL, STRING, 0, P_MPLS_UNICAST, 0);
-		i32 = mpls_hdr->label;
+		i32 = pak_get_bits_uint32(m32, 31, 20);
 		ptree_append("MPLS Label", &i32, UINT32D, 1, P_MPLS_UNICAST, 0);
-		i8  = mpls_hdr->exp;
+		i8  = pak_get_bits_uint32(m32, 11, 3);
 		ptree_append("MPLS Experimental Bits", &i8, UINT8, 1, P_MPLS_UNICAST, 0);
-		i8 = mpls_hdr->stack;
+		stack = i8 = pak_get_bits_uint32(m32, 8, 1);
 		ptree_append("MPLS Bottom Of Label Stack", &i8, UINT8, 1, P_MPLS_UNICAST, 0);
-		i8 = mpls_hdr->ttl;
+		i8 = pak_get_bits_uint32(m32, 7, 8);;
 		ptree_append("MPLS TTL", &i8, UINT8, 1, P_MPLS_UNICAST, 0);
 
-		cur_pak_info.L3_off = sizeof(struct ethhdr) + sizeof(struct mplshdr);
+		cur_pak_info.L3_off += sizeof(struct mplshdr);
 		*pak += sizeof(struct mplshdr);
-		cur_pak_info.L3_proto = 0x0800;
+		if (stack == 1) {
+			cur_pak_info.L3_proto = 0x0800;
+			break;
+		}
 	} 
 	return cur_pak_info.L3_proto;
 }
@@ -100,6 +105,7 @@ update_ether(char *value)
         char cproto[8];
 	uint16_t i16;
 	uint16_t *p16;
+	uint32_t *m32;
 
         eth_hdr = (struct ethhdr *)(fpak_curr_info->pak + cur_pak_info.L2_off);
 	vlan_hdr = (struct vlan_802_1q *)(fpak_curr_info->pak + cur_pak_info.L2_off + sizeof(struct ethhdr));
@@ -109,6 +115,7 @@ update_ether(char *value)
 	} else {
 		mpls_hdr = (struct mplshdr *)(fpak_curr_info->pak + cur_pak_info.L2_off + 
                                 sizeof(struct ethhdr));
+		m32 = (uint32_t *)mpls_hdr;
 	}
 
 	i16 = *(uint16_t *)vlan_hdr;
@@ -128,13 +135,13 @@ update_ether(char *value)
         } else if (!strcmp(ptype,"Type")) {
 		pak_val_update(&vlan_hdr->protocol, value, UINT16_HEX);
         } else if (!strcmp(ptype,"MPLS Label")) {
-		mpls_hdr->label = atoi(value);
+		*m32 = pak_set_bits_uint32D(*m32, 31, 20, value);
 	} else if (!strcmp(ptype,"MPLS Experimental Bits")) {
-                mpls_hdr->exp = atoi(value);
+		*m32 = pak_set_bits_uint32D(*m32, 11, 3, value);
         } else if (!strcmp(ptype,"MPLS Bottom Of Label Stack")) {
-                mpls_hdr->stack = atoi(value);
+                *m32 = pak_set_bits_uint32D(*m32, 8, 1, value);
         } else if (!strcmp(ptype,"MPLS TTL")) {
-                mpls_hdr->ttl = atoi(value);
+                *m32 = pak_set_bits_uint32D(*m32, 7, 8, value);
         }
 
 }

@@ -43,6 +43,7 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 {
 	struct ethhdr *eth_hdr;
 	struct vlan_802_1q *vlan_hdr;
+	struct mplshdr *mpls_hdr;
 	struct iphdr  *ip_hdr;
 	struct udphdr *udp_hdr;
 	struct tcphdr *tcp_hdr;
@@ -65,9 +66,13 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 		pak_info->eth_proto = ntohs(vlan_hdr->protocol);
 		tptr += sizeof(struct vlan_802_1q);
 	} 
-	if (pak_info->eth_proto == 0x8847) {
+	for (;pak_info->eth_proto == 0x8847;) {
+		mpls_hdr = (struct mplshdr *)tptr;
 		tptr += sizeof(struct mplshdr);	
-		pak_info->eth_proto = 0x0800;
+		if (pak_get_bits_uint32(*(uint32_t *)mpls_hdr, 8, 1) == 1) {
+			pak_info->eth_proto = 0x0800;
+			break;
+		}
 	}
 	if (pak_info->eth_proto == 0x0800) { /*ETH_P_IP*/
 		ip_hdr = (struct iphdr *)tptr;
