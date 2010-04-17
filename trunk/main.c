@@ -171,7 +171,12 @@ pak_list_dup_node(uint32_t no)
         temp = (struct pak_file_info *)malloc(sizeof(struct pak_file_info));
 	memcpy(temp, cur, sizeof(struct pak_file_info));	
 
-	temp->mem_alloc = 0;
+	if (cur->mem_alloc == 1) {
+		temp->pak = malloc(temp->pak_hdr.caplen);
+		memcpy(temp->pak, cur->pak, temp->pak_hdr.caplen);
+	} else {
+		temp->mem_alloc = 0;
+	}
 	cur->next = temp;
 	temp->prev = cur;
 
@@ -421,6 +426,9 @@ add_mpls_tag (GtkWidget *w,
         uint16_t label_val = 10, exp_val = 0, stack_val = 1, ttl_val = 64;
         struct pak_file_info *fpak_info;
 
+	if (p == NULL) {
+		goto mtag_end;
+	}
         dialog = gtk_dialog_new_with_buttons ("MPLS values", NULL,
                                                 GTK_DIALOG_MODAL,
                                                 GTK_STOCK_OK, GTK_RESPONSE_OK,
@@ -485,7 +493,8 @@ add_mpls_tag (GtkWidget *w,
                 pl_display_modified_iter();
         }
         gtk_widget_destroy (dialog);
-
+mtag_end:
+	;
 }
 
 static void
@@ -501,6 +510,9 @@ add_vlan_tag (GtkWidget *w,
 	uint16_t priority_val = 0, cfi_val = 0, id_val = 100;
 	struct pak_file_info *fpak_info;
 
+	if (p == NULL) {
+		goto vtag_end;
+	}
         dialog = gtk_dialog_new_with_buttons ("VLAN values", NULL,
                                                 GTK_DIALOG_MODAL,
                                                 GTK_STOCK_OK, GTK_RESPONSE_OK,
@@ -558,6 +570,8 @@ add_vlan_tag (GtkWidget *w,
                 pl_display_modified_iter();
         }
         gtk_widget_destroy (dialog);
+vtag_end:
+	;
 }
 
 static void
@@ -570,6 +584,10 @@ fragment_packets (GtkWidget *w,
 	gchar *p_frag_size, *f_val;
 	uint16_t fsize = 8;
 	struct pak_file_info *fpak_curr_next = NULL;
+
+	if (p == NULL) {
+		goto frag_end;
+	}
 
         dialog = gtk_dialog_new_with_buttons ("Fragment Options", NULL,
                                                 GTK_DIALOG_MODAL,
@@ -609,7 +627,8 @@ fragment_packets (GtkWidget *w,
 	pl_display_modified_iter();
 	gtk_widget_destroy (dialog);
 	
-
+frag_end:
+	;
 }
 
 void
@@ -1634,11 +1653,15 @@ pl_view_popup_menu_frag_pak (GtkWidget *menuitem, gpointer userdata)
 
 }
 
-void
+uint8_t
 pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
 {
     GtkWidget *menu, *stream_val, *ip_val, *del_val, *dup_val, *frag_val, *vtag_val;
     GtkWidget *mpls_val;
+
+    if (p == NULL) {
+	return;
+    }
  
     menu = gtk_menu_new();
  

@@ -65,10 +65,14 @@ frag_pak (struct pak_file_info *fpak_info, uint16_t size)
                 pak += sizeof(struct vlan_802_1q);
 		hdrs_len += sizeof(struct vlan_802_1q);
         }
-        if (protocol == 0x8847) {
-                pak += sizeof(struct mplshdr);
-                protocol = 0x0800;
+        for (;protocol == 0x8847;) {
 		hdrs_len += sizeof(struct mplshdr);
+                if (pak_get_bits_uint32(*(uint32_t *)pak, 8, 1) == 1) {
+                        protocol = 0x0800;
+			pak += sizeof(struct mplshdr);
+                        break;
+                }
+		pak += sizeof(struct mplshdr);
         }
         if (protocol == 0x0800) { 
 		ip_hdr = (struct iphdr *)pak;

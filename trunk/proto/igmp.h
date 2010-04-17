@@ -41,8 +41,8 @@ union igmphdr {
         	uint16_t csum;                                     
         	uint32_t group;                                                       
         	uint8_t  qrv:3,                                                       
-                 	suppress:1,                                                  
-                 	resv:4;                                                      
+                 	 suppress:1,                                                  
+                 	 resv:4;                                                      
         	uint8_t  qqic;
         	uint16_t nsrcs;
         	uint32_t srcs[0];

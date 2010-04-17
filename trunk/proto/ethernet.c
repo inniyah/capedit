@@ -40,6 +40,7 @@ display_ether(uint8_t **pak)
 	uint8_t i8;
 	uint16_t h_proto;
 	uint8_t stack = 0;
+	uint16_t i = 0;
 
 	eth_hdr = (struct ethhdr *)*pak;
 	
@@ -56,34 +57,34 @@ display_ether(uint8_t **pak)
 	cur_pak_info.L3_off = sizeof(struct ethhdr);
 	cur_pak_info.L3_proto = ntohs(eth_hdr->h_proto);
 	*pak += sizeof(struct ethhdr);
-	for ( ;h_proto == 0x8100; ) {
+	for (i = 0 ;h_proto == 0x8100; i++) {
 		vlan_hdr = (struct vlan_802_1q *)*pak; 
-		ptree_append("802.1Q Virtual LAN", NULL, STRING, 0, P_VLAN_802_1Q, 0);
+		ptree_append("802.1Q Virtual LAN", NULL, STRING, 0, P_VLAN_802_1Q, 1, i);
 		i16 = *(uint16_t *)vlan_hdr;
 		i16_2 = pak_get_bits_uint16(i16, 15, 3);
-		ptree_append("Priority", &i16_2, UINT8, 1, P_VLAN_802_1Q, 0);
+		ptree_append("Priority", &i16_2, UINT8, 1, P_VLAN_802_1Q, 1, i);
 		i16_2 = pak_get_bits_uint16(i16, 12, 1);
-		ptree_append("CFI", &i16_2, UINT8, 1, P_VLAN_802_1Q, 0);
+		ptree_append("CFI", &i16_2, UINT8, 1, P_VLAN_802_1Q, 1, i);
 		i16_2 = pak_get_bits_uint16(i16, 11, 12);
-		ptree_append("ID", &i16_2, UINT16D, 1, P_VLAN_802_1Q, 0);
-		ptree_append("Type", &vlan_hdr->protocol, UINT16_HEX, 1, P_VLAN_802_1Q, 0);
+		ptree_append("ID", &i16_2, UINT16D, 1, P_VLAN_802_1Q, 1, i);
+		ptree_append("Type", &vlan_hdr->protocol, UINT16_HEX, 1, P_VLAN_802_1Q, 1, i);
 
 		cur_pak_info.L3_off += sizeof(struct vlan_802_1q); 
 		*pak += sizeof(struct vlan_802_1q);
 		h_proto = cur_pak_info.L3_proto = ntohs(vlan_hdr->protocol);
 	} 
-	for (;h_proto == 0x8847;) {
+	for (i = 0 ;h_proto == 0x8847; i++) {
 		mpls_hdr = (struct mplshdr *)*pak;
 		m32 = *(uint32_t *)mpls_hdr;
-		ptree_append("Multiprotocol Label Switching Protocol", NULL, STRING, 0, P_MPLS_UNICAST, 0);
+		ptree_append("Multiprotocol Label Switching Protocol", NULL, STRING, 0, P_MPLS_UNICAST, 1, i);
 		i32 = pak_get_bits_uint32(m32, 31, 20);
-		ptree_append("MPLS Label", &i32, UINT32D, 1, P_MPLS_UNICAST, 0);
+		ptree_append("MPLS Label", &i32, UINT32D, 1, P_MPLS_UNICAST, 1, i);
 		i8  = pak_get_bits_uint32(m32, 11, 3);
-		ptree_append("MPLS Experimental Bits", &i8, UINT8, 1, P_MPLS_UNICAST, 0);
+		ptree_append("MPLS Experimental Bits", &i8, UINT8, 1, P_MPLS_UNICAST, 1, i);
 		stack = i8 = pak_get_bits_uint32(m32, 8, 1);
-		ptree_append("MPLS Bottom Of Label Stack", &i8, UINT8, 1, P_MPLS_UNICAST, 0);
+		ptree_append("MPLS Bottom Of Label Stack", &i8, UINT8, 1, P_MPLS_UNICAST, 1, i);
 		i8 = pak_get_bits_uint32(m32, 7, 8);;
-		ptree_append("MPLS TTL", &i8, UINT8, 1, P_MPLS_UNICAST, 0);
+		ptree_append("MPLS TTL", &i8, UINT8, 1, P_MPLS_UNICAST, 1, i);
 
 		cur_pak_info.L3_off += sizeof(struct mplshdr);
 		*pak += sizeof(struct mplshdr);
@@ -108,14 +109,28 @@ update_ether(char *value)
 	uint32_t *m32;
 
         eth_hdr = (struct ethhdr *)(fpak_curr_info->pak + cur_pak_info.L2_off);
-	vlan_hdr = (struct vlan_802_1q *)(fpak_curr_info->pak + cur_pak_info.L2_off + sizeof(struct ethhdr));
-	if (ntohs(eth_hdr->h_proto) == 0x8100) {
-		mpls_hdr = (struct mplshdr *)(fpak_curr_info->pak + cur_pak_info.L2_off + 
-				sizeof(struct ethhdr) + sizeof(struct mplshdr));
-	} else {
-		mpls_hdr = (struct mplshdr *)(fpak_curr_info->pak + cur_pak_info.L2_off + 
-                                sizeof(struct ethhdr));
-		m32 = (uint32_t *)mpls_hdr;
+	proto = ntohs(eth_hdr->h_proto);
+	if (p_ref_proto == P_VLAN_802_1Q) {
+		vlan_hdr = (struct vlan_802_1q *)(fpak_curr_info->pak + cur_pak_info.L2_off + sizeof(struct ethhdr));
+		vlan_hdr += record_l1;
+	}
+	if (p_ref_proto == P_MPLS_UNICAST) {
+		if (proto == 0x8100) {
+			vlan_hdr = (struct vlan_802_1q *)(fpak_curr_info->pak + cur_pak_info.L2_off + sizeof(struct ethhdr));
+			proto = ntohs(vlan_hdr->protocol);
+			for (;proto == 0x8100;) {
+				vlan_hdr += 1;;
+				proto = ntohs(vlan_hdr->protocol);
+			}
+			mpls_hdr = (struct mplshdr *)((vlan_hdr +1));
+			mpls_hdr += record_l1;
+			m32 = (uint32_t *)mpls_hdr;
+		} else {
+			mpls_hdr = (struct mplshdr *)(fpak_curr_info->pak + cur_pak_info.L2_off + 
+                        	        sizeof(struct ethhdr));
+			mpls_hdr += record_l1;
+			m32 = (uint32_t *)mpls_hdr;
+		}
 	}
 
 	i16 = *(uint16_t *)vlan_hdr;

@@ -303,21 +303,41 @@ uint8_t
 update_stream(const gchar *src_mac, const gchar *dst_mac, const gchar *src_ip, const gchar *dst_ip, const gchar *src_port, const gchar *dst_port)
 {
         struct ethhdr *eth_hdr;
+        struct vlan_802_1q *vlan_hdr;
+        struct mplshdr *mpls_hdr;
 	struct iphdr *ip_hdr;
 	struct tcphdr *tcp_hdr;
 	struct udphdr *udp_hdr;
 	uint8_t pak_reversed = 0;
+        uint8_t *pak;
+        uint16_t protocol;
 
-        eth_hdr = (struct ethhdr *)fpak_curr_info->pak;
-	if (eth_hdr->h_proto == 0x0008) {
-		ip_hdr = (struct iphdr *)(fpak_curr_info->pak + sizeof(struct ethhdr));
+        pak = fpak_curr_info->pak;
+        eth_hdr = (struct ethhdr *)pak;
+        protocol = eth_hdr->h_proto;
+        pak += sizeof(struct ethhdr);
+        for (;protocol == 0x0081;) {
+                vlan_hdr = (struct vlan_802_1q *)pak;
+                protocol = vlan_hdr->protocol;
+                pak += sizeof(struct vlan_802_1q);
+        }
+        for (;protocol == 0x4788;) {
+                mpls_hdr = (struct mplshdr *)pak;
+                pak += sizeof(struct mplshdr);
+                if (pak_get_bits_uint32(*(uint32_t *)mpls_hdr, 8, 1) == 1) {
+                        protocol = 0x0008;
+                        break;
+                }
+        }
+        if (protocol == 0x0008) {
+                ip_hdr = (struct iphdr *)pak;
 		if ((ip_hdr->saddr == cur_pak_info.src_ip) || (ip_hdr->saddr == cur_pak_info.dst_ip) && 
 				((ip_hdr->daddr == cur_pak_info.src_ip) || (ip_hdr->daddr == cur_pak_info.dst_ip))) {
 			if (ip_hdr->saddr != cur_pak_info.src_ip) {
 				pak_reversed = 1;
 			}
 			if (ip_hdr->protocol == 0x11) {
-				udp_hdr = (struct udphdr *)(fpak_curr_info->pak + sizeof(struct ethhdr) + ip_hdr->ihl * 4);
+				udp_hdr = (struct udphdr *)(pak + ip_hdr->ihl * 4);
 				if (((udp_hdr->source == cur_pak_info.src_port) || (udp_hdr->source == cur_pak_info.dst_port)) &&
 					(udp_hdr->dest == cur_pak_info.src_port) || (udp_hdr->dest == cur_pak_info.dst_port)) {
 					if (pak_reversed == 0) {
@@ -345,7 +365,7 @@ update_stream(const gchar *src_mac, const gchar *dst_mac, const gchar *src_ip, c
 					}
 				}
 			} else if (ip_hdr->protocol == 0x06) {
-				tcp_hdr = (struct tcphdr *)(fpak_curr_info->pak + sizeof(struct ethhdr) + ip_hdr->ihl * 4);
+				tcp_hdr = (struct tcphdr *)(pak + ip_hdr->ihl * 4);
 				if (((tcp_hdr->source == cur_pak_info.src_port) || (tcp_hdr->source == cur_pak_info.dst_port)) &&
                                         (tcp_hdr->dest == cur_pak_info.src_port) || (tcp_hdr->dest == cur_pak_info.dst_port)) {
                                         if (pak_reversed == 0) {
@@ -383,14 +403,34 @@ uint8_t
 update_mac_ip(const gchar *src_mac, const gchar *dst_mac, const gchar *src_ip, const gchar *dst_ip)
 {
         struct ethhdr *eth_hdr;
+        struct vlan_802_1q *vlan_hdr;
+        struct mplshdr *mpls_hdr;
         struct iphdr *ip_hdr;
         struct tcphdr *tcp_hdr;
         struct udphdr *udp_hdr;
         uint8_t pak_reversed = 0;
+	uint8_t *pak;
+	uint16_t protocol;
 
-        eth_hdr = (struct ethhdr *)fpak_curr_info->pak;
-        if (eth_hdr->h_proto == 0x0008) {
-                ip_hdr = (struct iphdr *)(fpak_curr_info->pak + sizeof(struct ethhdr));
+	pak = fpak_curr_info->pak;
+        eth_hdr = (struct ethhdr *)pak;
+	protocol = eth_hdr->h_proto;
+	pak += sizeof(struct ethhdr);
+        for (;protocol == 0x0081;) {
+                vlan_hdr = (struct vlan_802_1q *)pak;
+                protocol = vlan_hdr->protocol;
+                pak += sizeof(struct vlan_802_1q);
+        }
+        for (;protocol == 0x4788;) {
+                mpls_hdr = (struct mplshdr *)pak;
+                pak += sizeof(struct mplshdr);
+                if (pak_get_bits_uint32(*(uint32_t *)mpls_hdr, 8, 1) == 1) {
+                        protocol = 0x0008;
+                        break;
+                }
+        }
+        if (protocol == 0x0008) {
+                ip_hdr = (struct iphdr *)pak;
                 if ((ip_hdr->saddr == cur_pak_info.src_ip) || (ip_hdr->saddr == cur_pak_info.dst_ip) &&
                                 ((ip_hdr->daddr == cur_pak_info.src_ip) || (ip_hdr->daddr == cur_pak_info.dst_ip))) {
                         if (ip_hdr->saddr != cur_pak_info.src_ip) {
@@ -466,5 +506,3 @@ update_mac_ip(const gchar *src_mac, const gchar *dst_mac, const gchar *src_ip, c
         }
 	return (0);
 }
-
-

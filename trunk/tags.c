@@ -77,14 +77,13 @@ add_mtag (struct pak_file_info *fpak_info, uint16_t label, uint16_t exp, uint16_
 			break;
 		}
         }
-	
+        if ((protocol != 0x0008) && (mpls_present != 1)) {
+                return;
+        }	
 	if (vlan_present == 1) {
 		vlan_hdr->protocol = 0x4788;
 	} else {
 		eth_hdr->h_proto = 0x4788; /*MPLS*/
-	}
-	if ((protocol != 0x0008) && (mpls_present != 1)) {
-		return;
 	}
         new_pak = (uint8_t *)malloc(fpak_info->pak_hdr.caplen + sizeof(struct mplshdr));
         memcpy(new_pak, pak, hdrs_len);

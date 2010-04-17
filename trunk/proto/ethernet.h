@@ -38,21 +38,23 @@ struct ether_addr
 struct ethhdr {
         uint8_t   h_dest[6];       /* destination eth addr */
         uint8_t   h_source[6];     /* source ether addr    */
-        uint16_t  h_proto;                /* packet type ID field */
+        uint16_t  h_proto;         /* packet type ID field */
 } __attribute__((packed));
+
 
 struct vlan_802_1q {
 	uint16_t priority:3,
 		 cfi:1,
 		 id:12;
 	uint16_t protocol;
-} __attribute__((packed));
+};
 
 struct mplshdr {
 	uint32_t label:20,
 		 exp:3,
 		 stack:1,
 		 ttl:8;
+	uint32_t mpls_next[0];
 };
 
 
