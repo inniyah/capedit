@@ -5,9 +5,9 @@
 [http://packetsquare-capedit.googlecode.com/files/pak-edit1.png]
 [http://packetsquare-capedit.googlecode.com/files/stream-edit.png]
 [http://packetsquare-capedit.googlecode.com/files/packet-reorder.png]
-[http://packetsquare-capedit.googlecode.com/files/capedit-menu.png]
+[http://packetsquare-capedit.googlecode.com/files/pak-menu.png]
 [http://packetsquare-capedit.googlecode.com/files/mac-ip-replace.png]
-[http://packetsquare-capedit.googlecode.com/files/interfaces.png]
+[http://packetsquare-capedit.googlecode.com/files/interfaces1.png]
 
 
 
