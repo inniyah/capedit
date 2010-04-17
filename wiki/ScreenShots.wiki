@@ -2,7 +2,7 @@
 
 = Screen Shots =
 
-[http://packetsquare-capedit.googlecode.com/files/pak-edit.png]
+[http://packetsquare-capedit.googlecode.com/files/pak-edit1.png]
 [http://packetsquare-capedit.googlecode.com/files/stream-edit.png]
 [http://packetsquare-capedit.googlecode.com/files/packet-reorder.png]
 [http://packetsquare-capedit.googlecode.com/files/capedit-menu.png]
