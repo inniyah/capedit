@@ -60,6 +60,7 @@ enum {
 	P_ARP,
 	P_IPV4,
 	P_IPV6,
+	P_GRE_IP,
 	P_IGMP_QV3,
 	P_IGMP_RV3,
 	P_ICMP,

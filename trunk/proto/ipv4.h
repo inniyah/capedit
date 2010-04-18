@@ -42,6 +42,25 @@ struct iphdr
     /*The options start here. */
 };
 
+struct sre {
+	uint16_t af;
+	uint8_t  offset;
+	uint8_t  length;
+	uint8_t  rinfo[0]; 
+
+};
+
+struct grehdr 
+{
+	uint16_t fandv;
+	uint16_t protocol;
+	uint16_t csum;
+	uint16_t offset;
+	uint32_t key;
+	uint32_t seq_no;
+	struct sre sre_hdr[0];
+};
+
 
 uint8_t
 display_ipv4(uint8_t **pak);

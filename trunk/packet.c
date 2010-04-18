@@ -45,6 +45,8 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 	struct vlan_802_1q *vlan_hdr;
 	struct mplshdr *mpls_hdr;
 	struct iphdr  *ip_hdr;
+	struct grehdr *gre_hdr; 
+	struct sre    *sre_hdr;
 	struct udphdr *udp_hdr;
 	struct tcphdr *tcp_hdr;
 	struct icmphdr *icmp_hdr;
@@ -75,14 +77,43 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 		}
 	}
 	if (pak_info->eth_proto == 0x0800) { /*ETH_P_IP*/
+iphdr_parse:
 		ip_hdr = (struct iphdr *)tptr;
 		pak_info->src_ip = ip_to_str((uint8_t *)&(ip_hdr->saddr));
 		pak_info->dst_ip = ip_to_str((uint8_t *)&(ip_hdr->daddr));
 		pak_info->proto  = ip_hdr->protocol;
 		strcpy(pak_info->protocol, "IP");
-		if (pak_get_bits_uint16(ip_hdr->frag_off, 13, 1) == 1) {
+		if (pak_get_bits_uint16(ip_hdr->frag_off, 13, 1) || 
+		    (pak_get_bits_uint16(ip_hdr->frag_off, 12, 13) > 0)) {
 			strcpy(pak_info->info, "Fragmented IP Packet");
 			return 1;
+		}
+		if (pak_info->proto == 0x04) {
+			tptr += (ip_hdr->ihl * 4);
+			goto iphdr_parse;
+		}
+		if (pak_info->proto == 0x2f) {
+			tptr += (ip_hdr->ihl * 4);
+			gre_hdr = (struct grehdr *)tptr;	
+			if (pak_get_bits_uint16(gre_hdr->fandv, 15, 1) ||
+			    pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
+				tptr += 8;	
+			} else {
+				tptr += 4;
+			}
+			if (pak_get_bits_uint16(gre_hdr->fandv, 13, 1)) {
+				tptr += 4;
+			}
+			if (pak_get_bits_uint16(gre_hdr->fandv, 12, 1)) {
+                                tptr += 4;
+                        }
+			if (pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
+				for (sre_hdr = (struct sre *)tptr;(sre_hdr->af != 0x0000) && (sre_hdr->offset != 0);) {				
+                                	tptr += (sizeof(struct sre) + sre_hdr->offset);
+					sre_hdr = (struct sre *)tptr;
+				}
+                        } 
+			goto iphdr_parse;
 		}
 		if (pak_info->proto == 0x11) {
 			tptr += (ip_hdr->ihl * 4);	
@@ -263,7 +294,7 @@ update_L2(char *value)
 void
 update_L3(char *value)
 {
-	if (p_ref_proto == P_IPV4) {
+	if ((p_ref_proto == P_IPV4) || (p_ref_proto == P_GRE_IP)) {
 		update_ipv4(value);
 
 	} else if (p_ref_proto == P_ARP) {

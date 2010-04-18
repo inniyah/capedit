@@ -136,9 +136,9 @@ update_ether(char *value)
 	i16 = *(uint16_t *)vlan_hdr;
 	p16 = (uint16_t *)vlan_hdr;
         if (!strcmp(ptype,"Source Mac Address")) {
-		pak_val_update(eth_hdr->h_source, value, MAC);
+		pak_val_update(&eth_hdr->h_source, value, MAC);
         } else if (!strcmp(ptype,"Destination Mac Address")) {
-		pak_val_update(eth_hdr->h_dest, value, MAC);
+		pak_val_update(&eth_hdr->h_dest, value, MAC);
         } else if (!strcmp(ptype,"Protocol")) {
 		pak_val_update(&eth_hdr->h_proto, value, UINT16_HEX);
         } else if (!strcmp(ptype,"Priority")) {
