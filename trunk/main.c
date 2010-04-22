@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "error.h"
 #include "tags.h"
+#include <arpa/inet.h>
 
 GtkWidget *top_level;
 static GtkWidget *mn_vbox;
@@ -695,7 +696,9 @@ ptree_append(char *param, void *value, uint8_t type, uint8_t level, uint16_t p_r
 		temp_val = (char *)ip_to_str((uint8_t *)value);
 		sprintf(buf, "%s", temp_val);
 		free(temp_val);
-	}
+	}else if (type == IPV6_ADDR) {
+        inet_ntop(AF_INET6, value, buf, 128);
+    }
 	append_p_tree_data(param,buf,level,p_ref_proto,rl1,rl2);
 
 }
@@ -1150,17 +1153,17 @@ pl_cur_changed(GtkTreeView *treeview)
     gint no;
 
     if (fpak_curr_info->mem_alloc == 0) {
-	fpak_curr_info->pak = NULL;
+	    fpak_curr_info->pak = NULL;
     }
     gtk_tree_model_get (model, &iter, 0, &no, -1);
     fpak_curr_info  = pak_list_get(no);
     if (fpak_curr_info->mem_alloc == 0) {
     	fseek(p->rfile,fpak_curr_info->offset,0);    
-	p->buffer = p->base;
+	    p->buffer = p->base;
     	pcap_offline_read(p,1);
     } else {
-	p->buffer = fpak_curr_info->pak;
-	p->cap_len = fpak_curr_info->pak_len;
+	    p->buffer = fpak_curr_info->pak;
+	    p->cap_len = fpak_curr_info->pak_len;
     }
     
     gtk_tree_store_clear(p_store);

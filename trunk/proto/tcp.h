@@ -26,6 +26,7 @@
 
 #include <stdint.h>
 #include "ipv4.h"
+#include "ipv6.h"
 
 struct tcphdr {
         uint16_t  source;

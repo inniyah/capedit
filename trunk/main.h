@@ -50,7 +50,8 @@ enum {
 	UINT32_HEX,
 	STRING,
 	MAC,
-	IPV4_ADDR
+	IPV4_ADDR,
+	IPV6_ADDR
 };
 
 enum {

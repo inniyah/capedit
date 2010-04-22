@@ -45,6 +45,7 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 	struct vlan_802_1q *vlan_hdr;
 	struct mplshdr *mpls_hdr;
 	struct iphdr  *ip_hdr;
+	struct ip6hdr *ip6_hdr;
 	struct grehdr *gre_hdr; 
 	struct sre    *sre_hdr;
 	struct udphdr *udp_hdr;
@@ -57,7 +58,7 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 	pak_info->src_mac = ether_to_str((uint8_t *)eth_hdr->h_source);
 	pak_info->dst_mac = ether_to_str((uint8_t *)eth_hdr->h_dest);
 	pak_info->eth_proto = ntohs(eth_hdr->h_proto);	
-    	strcpy(pak_info->row_color, "#E3E3E3");
+  	strcpy(pak_info->row_color, "#E3E3E3");
 	strcpy(pak_info->info, " ");
 	strcpy(pak_info->protocol, "UNKNOWN");
 
@@ -169,7 +170,20 @@ iphdr_parse:
 			sprintf(pak_info->info, "NOT SUPPORTED");
 			strcpy(pak_info->row_color, "red");
 		}
-	} else if (pak_info->eth_proto == 0x0806) {
+	} else if(pak_info->eth_proto == 0x86DD) {
+            ip6_hdr = (struct ip6hdr *)tptr;
+            char buf[128];
+            pak_info->dst_ip=(char*) malloc(128);
+            pak_info->src_ip=(char*) malloc(128);
+            inet_ntop(AF_INET6, &(ip6_hdr->saddr), buf, 128);
+            sprintf(pak_info->src_ip,"%s",buf);
+            inet_ntop(AF_INET6, &(ip6_hdr->daddr), buf, 128);
+            sprintf(pak_info->dst_ip,"%s",buf);
+
+            strcpy(pak_info->protocol, "IPV6");
+
+//            pak_info->proto  = ip6_hdr->next_header;
+}else if (pak_info->eth_proto == 0x0806) {
 		arp_hdr = (struct arphdr *)tptr;
 		strcpy(pak_info->protocol, "ARP");
 		strcpy(pak_info->row_color, "#D6E7FF");
@@ -235,7 +249,9 @@ display_L3(uint8_t **pak, uint16_t L3_proto)
 {
 	if (L3_proto == 0x0800) {            	/* Internet Protocol packet     */
 		return (display_ipv4(pak));
-	} else if (L3_proto == 0x0806) {        /* Address Resolution packet    */
+	}else if (L3_proto == 0x86DD) {               /* Internet Protocol packet     */
+        return (display_ipv6(pak));
+    } else if (L3_proto == 0x0806) {        /* Address Resolution packet    */
 		display_arp(pak);
 		return 0;
 	} else {
