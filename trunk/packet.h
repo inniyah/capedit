@@ -27,10 +27,10 @@
 extern struct p_cur_pak_info cur_pak_info;
 
 struct pl_decap_pak_info {
-	const char *src_ip;
-	const char *dst_ip;
-	const char *src_mac;
-	const char *dst_mac;
+	char *src_ip;
+	char *dst_ip;
+	char *src_mac;
+	char *dst_mac;
 	uint8_t proto;
 	uint16_t eth_proto;
 	char protocol[20];

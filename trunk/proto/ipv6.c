@@ -17,17 +17,17 @@ display_ipv6(uint8_t **pak)
 
 	ip_hdr = (struct ip6hdr *)*pak;
 	ptree_append ("Internet Protocol(IPv6)",NULL,STRING,0, P_IPV6,0);	
-    temp = ip_hdr->version;
+    	temp = pak_get_bits_uint32(ip_hdr->vtf, 31, 4);
 	ptree_append ("Version:",&temp,UINT8,1, P_IPV6,0);
-    temp = ip_hdr->tos;
-    ptree_append("Tos:",&temp,UINT8_HEX_1,1, P_IPV6,0);
-    temp = ip_hdr->flow_label;
-    ptree_append("Flow Label:",&temp,UINT32,1, P_IPV6,0);
-    ptree_append("Payload Length:",&ip_hdr->payload_length,UINT16,1, P_IPV6,0);
+	temp = pak_get_bits_uint32(ip_hdr->vtf, 27, 8);
+    	ptree_append("Tos:",&temp,UINT8_HEX_1,1, P_IPV6,0);
+	temp = pak_get_bits_uint32(ip_hdr->vtf, 19, 20);
+    	ptree_append("Flow Label:",&temp,UINT32,1, P_IPV6,0);
+    	ptree_append("Payload Length:",&ip_hdr->payload_length,UINT16,1, P_IPV6,0);
 	ptree_append("Next Header:", &ip_hdr->next_header, UINT8,1, P_IPV6,0);
 	ptree_append("Hop Limit:",&ip_hdr->hop_limit, UINT8, 1, P_IPV6,0);
-    ptree_append("Source IP:",&(ip_hdr->saddr),IPV6_ADDR,1, P_IPV6,0);
-    ptree_append("Destination IP:",&(ip_hdr->daddr),IPV6_ADDR,1, P_IPV6,0);
+    	ptree_append("Source IP:",&(ip_hdr->saddr),IPV6_ADDR,1, P_IPV6,0);
+    	ptree_append("Destination IP:",&(ip_hdr->daddr),IPV6_ADDR,1, P_IPV6,0);
 
 
 //	cur_pak_info.src_ip = ip_hdr->saddr;

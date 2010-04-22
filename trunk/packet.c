@@ -77,24 +77,37 @@ pl_decap_pak(uint8_t *buf,struct pl_decap_pak_info *pak_info)
 			break;
 		}
 	}
-	if (pak_info->eth_proto == 0x0800) { /*ETH_P_IP*/
+	if ((pak_info->eth_proto == 0x0800) || (pak_info->eth_proto == 0x86DD)) { /*ETH_P_IP*/
 iphdr_parse:
-		ip_hdr = (struct iphdr *)tptr;
-		pak_info->src_ip = ip_to_str((uint8_t *)&(ip_hdr->saddr));
-		pak_info->dst_ip = ip_to_str((uint8_t *)&(ip_hdr->daddr));
-		pak_info->proto  = ip_hdr->protocol;
-		strcpy(pak_info->protocol, "IP");
-		if (pak_get_bits_uint16(ip_hdr->frag_off, 13, 1) || 
-		    (pak_get_bits_uint16(ip_hdr->frag_off, 12, 13) > 0)) {
-			strcpy(pak_info->info, "Fragmented IP Packet");
-			return 1;
+		if (pak_info->eth_proto == 0x0800) {
+			ip_hdr = (struct iphdr *)tptr;
+			pak_info->src_ip = ip_to_str((uint8_t *)&(ip_hdr->saddr));
+			pak_info->dst_ip = ip_to_str((uint8_t *)&(ip_hdr->daddr));
+			pak_info->proto  = ip_hdr->protocol;
+			strcpy(pak_info->protocol, "IP");
+			tptr += (ip_hdr->ihl * 4);
+			if (pak_get_bits_uint16(ip_hdr->frag_off, 13, 1) || 
+		    		(pak_get_bits_uint16(ip_hdr->frag_off, 12, 13) > 0)) {
+				strcpy(pak_info->info, "Fragmented IP Packet");
+				return 1;
+			}
+		} else if (pak_info->eth_proto == 0x86DD) {
+			ip6_hdr = (struct ip6hdr *)tptr;
+			char buf[128];
+			pak_info->dst_ip=(char*) malloc(128);
+			pak_info->src_ip=(char*) malloc(128);
+			inet_ntop(AF_INET6, &(ip6_hdr->saddr), buf, 128);
+			sprintf(pak_info->src_ip,"%s",buf);
+			inet_ntop(AF_INET6, &(ip6_hdr->daddr), buf, 128);
+			sprintf(pak_info->dst_ip,"%s",buf);
+			strcpy(pak_info->protocol, "IPV6");
+			pak_info->proto  = ip6_hdr->next_header;
+			tptr += sizeof(struct ip6hdr);
 		}
 		if (pak_info->proto == 0x04) {
-			tptr += (ip_hdr->ihl * 4);
 			goto iphdr_parse;
 		}
 		if (pak_info->proto == 0x2f) {
-			tptr += (ip_hdr->ihl * 4);
 			gre_hdr = (struct grehdr *)tptr;	
 			if (pak_get_bits_uint16(gre_hdr->fandv, 15, 1) ||
 			    pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
@@ -117,13 +130,11 @@ iphdr_parse:
 			goto iphdr_parse;
 		}
 		if (pak_info->proto == 0x11) {
-			tptr += (ip_hdr->ihl * 4);	
 			udp_hdr = (struct udphdr *)tptr;
 			strcpy(pak_info->protocol, "UDP");
 			strcpy(pak_info->row_color, "#70DFFF");
 			sprintf(pak_info->info, "%u > %u", ntohs(udp_hdr->source), ntohs(udp_hdr->dest));
 		} else if (pak_info->proto == 0x06) {
-			tptr += (ip_hdr->ihl * 4);
 			tcp_hdr = (struct tcphdr *)tptr;
 			strcpy(pak_info->protocol, "TCP");
 			strcpy(pak_info->row_color, "#8CFF7F");
@@ -170,20 +181,7 @@ iphdr_parse:
 			sprintf(pak_info->info, "NOT SUPPORTED");
 			strcpy(pak_info->row_color, "red");
 		}
-	} else if(pak_info->eth_proto == 0x86DD) {
-            ip6_hdr = (struct ip6hdr *)tptr;
-            char buf[128];
-            pak_info->dst_ip=(char*) malloc(128);
-            pak_info->src_ip=(char*) malloc(128);
-            inet_ntop(AF_INET6, &(ip6_hdr->saddr), buf, 128);
-            sprintf(pak_info->src_ip,"%s",buf);
-            inet_ntop(AF_INET6, &(ip6_hdr->daddr), buf, 128);
-            sprintf(pak_info->dst_ip,"%s",buf);
-
-            strcpy(pak_info->protocol, "IPV6");
-
-//            pak_info->proto  = ip6_hdr->next_header;
-}else if (pak_info->eth_proto == 0x0806) {
+	} else if (pak_info->eth_proto == 0x0806) {
 		arp_hdr = (struct arphdr *)tptr;
 		strcpy(pak_info->protocol, "ARP");
 		strcpy(pak_info->row_color, "#D6E7FF");

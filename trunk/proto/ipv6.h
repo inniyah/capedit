@@ -16,9 +16,7 @@ struct inipv6_addr
 
 
 struct ip6hdr {
-    uint32_t  version:4,
-              tos:8,
-              flow_label:20;
+    uint32_t  vtf;
     uint16_t  payload_length;
     uint8_t  next_header;
     uint8_t  hop_limit;
