@@ -25,8 +25,7 @@
 #define __TCP_H__
 
 #include <stdint.h>
-#include "ipv4.h"
-#include "ipv6.h"
+#include "ip.h"
 
 struct tcphdr {
         uint16_t  source;

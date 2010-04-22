@@ -245,11 +245,9 @@ display_L2(uint8_t **pak)
 uint8_t
 display_L3(uint8_t **pak, uint16_t L3_proto)
 {
-	if (L3_proto == 0x0800) {            	/* Internet Protocol packet     */
-		return (display_ipv4(pak));
-	}else if (L3_proto == 0x86DD) {               /* Internet Protocol packet     */
-        return (display_ipv6(pak));
-    } else if (L3_proto == 0x0806) {        /* Address Resolution packet    */
+	if (L3_proto == 0x0800 || L3_proto == 0x86DD) {            	/* Internet Protocol packet     */
+		return (display_ip(pak, L3_proto));
+    	} else if (L3_proto == 0x0806) {        /* Address Resolution packet    */
 		display_arp(pak);
 		return 0;
 	} else {
@@ -309,7 +307,7 @@ void
 update_L3(char *value)
 {
 	if ((p_ref_proto == P_IPV4) || (p_ref_proto == P_GRE_IP)) {
-		update_ipv4(value);
+		update_ip(value);
 
 	} else if (p_ref_proto == P_ARP) {
 		update_arp(value);	

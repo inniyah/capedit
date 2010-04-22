@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include "proto/ethernet.h"
-#include "proto/ipv4.h"
+#include "proto/ip.h"
 #include "fragment.h"
 #include "pcap.h"
 

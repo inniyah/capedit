@@ -1,6 +1,6 @@
-/* ipv4.h
+/* ip.h
  *
- * $Id: ipv4.h 1 2010-04-11 21:04:36 vijay mohan $
+ * $Id: ip.h 1 2010-04-11 21:04:36 vijay mohan $
  *
  * PacketSquare-capedit - Pcap Edit & Replay Tool
  * By vijay mohan <vijaymohan@packetsquare.com>
@@ -42,6 +42,28 @@ struct iphdr
     /*The options start here. */
 };
 
+/* IPv6 address */
+struct inipv6_addr
+  {
+    union
+      {
+    uint8_t __u6_addr8[16];
+    uint16_t __u6_addr16[8];
+    uint32_t __u6_addr32[4];
+      } __in6_u;
+  };
+
+
+struct ip6hdr {
+    uint32_t  vtf;
+    uint16_t  payload_length;
+    uint8_t  next_header;
+    uint8_t  hop_limit;
+    struct  inipv6_addr saddr;
+    struct  inipv6_addr daddr;
+    /*The options start here. */
+};
+
 struct sre {
 	uint16_t af;
 	uint8_t  offset;
@@ -63,10 +85,10 @@ struct grehdr
 
 
 uint8_t
-display_ipv4(uint8_t **pak);
+display_ip(uint8_t **pak, uint16_t l3_proto);
 
 void
-update_ipv4(char *value);
+update_ip(char *value);
 
 uint16_t 
 ComputeChecksum(uint8_t *data, uint8_t len);

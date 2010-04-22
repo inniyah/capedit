@@ -1,6 +1,6 @@
-/* ipv4.c
+/* ip.c
  *
- * $Id: ipv4.c 1 2010-04-11 21:04:36 vijay mohan $
+ * $Id: ip.c 1 2010-04-11 21:04:36 vijay mohan $
  *
  * PacketSquare-capedit - Pcap Edit & Replay Tool
  * By vijay mohan <vijaymohan@packetsquare.com>
@@ -61,9 +61,10 @@ in_cksum(const u_short *addr, register u_int len)
 }
 
 uint8_t
-display_ipv4(uint8_t **pak)
+display_ip(uint8_t **pak, uint16_t l3_protocol)
 {
 	struct iphdr *ip_hdr;
+	struct ip6hdr *ip6_hdr;
 	struct grehdr *gre_hdr;
 	struct sre *sre_hdr;
 	uint32_t temp;
@@ -73,51 +74,71 @@ display_ipv4(uint8_t **pak)
 	uint8_t iphdr_no = 0;
 	uint8_t i = 0;
 	uint16_t hdrs_len = 0;
+	uint8_t l4_protocol;
 
 iphdr_parse:
-	ip_hdr = (struct iphdr *)*pak;
-	ptree_append ("Internet Protocol(IPv4)",NULL,STRING,0, P_IPV4, 0);	
-	temp = ip_hdr->version;
-	ptree_append ("Version:",&temp,UINT8,1, P_IPV4, 1, iphdr_no);
-	temp = ip_hdr->ihl;
-        ptree_append("Header length:",&temp,UINT8,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Tos:",&ip_hdr->tos,UINT8,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Total length:",&ip_hdr->tot_len,UINT16,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Identification:",&ip_hdr->id,UINT16_HEX,1, P_IPV4, 1, iphdr_no);
-	temp = pak_get_bits_uint16(ip_hdr->frag_off, 15, 3);
-	ptree_append("Flags:", &temp, UINT8_HEX_1 ,1, P_IPV4, 1, iphdr_no);
-	temp = pak_get_bits_uint16(ip_hdr->frag_off, 15, 1);
-	ptree_append("Reserved bit:", &temp, UINT8, 2, P_IPV4, 1, iphdr_no);
-        temp = pak_get_bits_uint16(ip_hdr->frag_off, 14, 1);
-        ptree_append("Don't fragment:", &temp, UINT8, 2, P_IPV4, 1, iphdr_no);
-        mf_flag = temp = pak_get_bits_uint16(ip_hdr->frag_off, 13, 1);
-        ptree_append("More fragments:", &temp, UINT8, 2, P_IPV4, 1, iphdr_no);
-	offset = temp = pak_get_bits_uint16(ip_hdr->frag_off, 12, 13);
-        ptree_append("Fragment offset:",&temp,UINT16HD,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Time to live:",&ip_hdr->ttl,UINT8,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Protocol:",&ip_hdr->protocol,UINT8,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Header checksum:",&ip_hdr->check,UINT16_HEX,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Source IP:",&ip_hdr->saddr,IPV4_ADDR,1, P_IPV4, 1, iphdr_no);
-        ptree_append("Destination IP:",&ip_hdr->daddr,IPV4_ADDR,1, P_IPV4, 1, iphdr_no);
-	*pak += (ip_hdr->ihl * 4);
-	hdrs_len += (ip_hdr->ihl * 4);
-	++iphdr_no;
+	if (l3_protocol == 0x0800) {
+		ip_hdr = (struct iphdr *)*pak;
+		ptree_append ("Internet Protocol(IPv4)",NULL,STRING,0, P_IPV4, 0);	
+		temp = ip_hdr->version;
+		ptree_append ("Version:",&temp,UINT8,1, P_IPV4, 1, iphdr_no);
+		temp = ip_hdr->ihl;
+        	ptree_append("Header length:",&temp,UINT8,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Tos:",&ip_hdr->tos,UINT8,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Total length:",&ip_hdr->tot_len,UINT16,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Identification:",&ip_hdr->id,UINT16_HEX,1, P_IPV4, 1, iphdr_no);
+		temp = pak_get_bits_uint16(ip_hdr->frag_off, 15, 3);
+		ptree_append("Flags:", &temp, UINT8_HEX_1 ,1, P_IPV4, 1, iphdr_no);
+		temp = pak_get_bits_uint16(ip_hdr->frag_off, 15, 1);
+		ptree_append("Reserved bit:", &temp, UINT8, 2, P_IPV4, 1, iphdr_no);
+        	temp = pak_get_bits_uint16(ip_hdr->frag_off, 14, 1);
+        	ptree_append("Don't fragment:", &temp, UINT8, 2, P_IPV4, 1, iphdr_no);
+        	mf_flag = temp = pak_get_bits_uint16(ip_hdr->frag_off, 13, 1);
+        	ptree_append("More fragments:", &temp, UINT8, 2, P_IPV4, 1, iphdr_no);
+		offset = temp = pak_get_bits_uint16(ip_hdr->frag_off, 12, 13);
+        	ptree_append("Fragment offset:",&temp,UINT16HD,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Time to live:",&ip_hdr->ttl,UINT8,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Protocol:",&ip_hdr->protocol,UINT8,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Header checksum:",&ip_hdr->check,UINT16_HEX,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Source IP:",&ip_hdr->saddr,IPV4_ADDR,1, P_IPV4, 1, iphdr_no);
+        	ptree_append("Destination IP:",&ip_hdr->daddr,IPV4_ADDR,1, P_IPV4, 1, iphdr_no);
+		*pak += (ip_hdr->ihl * 4);
+		hdrs_len += (ip_hdr->ihl * 4);
+		l4_protocol = ip_hdr->protocol;
+		++iphdr_no;
 
-	if (iphdr_no == 1) {
-        	cur_pak_info.src_ip = ip_hdr->saddr;
-        	cur_pak_info.dst_ip = ip_hdr->daddr;
-        	cur_pak_info.proto  = ip_hdr->protocol;
+		if (iphdr_no == 1) {
+        		cur_pak_info.src_ip = ip_hdr->saddr;
+        		cur_pak_info.dst_ip = ip_hdr->daddr;
+        		cur_pak_info.proto  = ip_hdr->protocol;
+		}
+        	if ((mf_flag == 1) || (offset > 0)) {
+                	cur_pak_info.L4_proto = 0;
+                	return 0;
+        	}
+	} else if (l3_protocol == 0x86DD) {
+        	ip6_hdr = (struct ip6hdr *)*pak;
+        	ptree_append ("Internet Protocol(IPv6)",NULL,STRING,0, P_IPV6,0);
+        	temp = pak_get_bits_uint32(ip6_hdr->vtf, 31, 4);
+        	ptree_append ("Version:",&temp,UINT8,1, P_IPV6,0);
+        	temp = pak_get_bits_uint32(ip6_hdr->vtf, 27, 8);
+        	ptree_append("Tos:",&temp,UINT8_HEX_1,1, P_IPV6,0);
+        	temp = pak_get_bits_uint32(ip6_hdr->vtf, 19, 20);
+        	ptree_append("Flow Label:",&temp,UINT32,1, P_IPV6,0);
+        	ptree_append("Payload Length:",&ip6_hdr->payload_length,UINT16,1, P_IPV6,0);
+        	ptree_append("Next Header:", &ip6_hdr->next_header, UINT8,1, P_IPV6,0);
+        	ptree_append("Hop Limit:",&ip6_hdr->hop_limit, UINT8, 1, P_IPV6,0);
+        	ptree_append("Source IP:",&(ip6_hdr->saddr),IPV6_ADDR,1, P_IPV6,0);
+        	ptree_append("Destination IP:",&(ip6_hdr->daddr),IPV6_ADDR,1, P_IPV6,0);
+		hdrs_len += sizeof(struct ip6hdr);
+		l4_protocol = ip6_hdr->next_header;
 	}
-        if ((mf_flag == 1) || (offset > 0)) {
-                cur_pak_info.L4_proto = 0;
-                return 0;
-        }
 
-	if (ip_hdr->protocol == 0x04) {
+	if (l4_protocol == 0x04) {
 		goto iphdr_parse;
 	}
 
-	if (ip_hdr->protocol == 0x2f) {
+	if (l4_protocol == 0x2f) {
 		gre_hdr = (struct grehdr *)*pak;
 		ptree_append ("Generic Routing Encapsulation(IP)",NULL,STRING,0, P_GRE_IP, 0);
 		ptree_append("Flags and Version:",&gre_hdr->fandv, UINT16_HEX, 1, P_GRE_IP, 1, grehdr_no);
@@ -173,11 +194,11 @@ iphdr_parse:
 	}
 
 	cur_pak_info.L4_off = cur_pak_info.L3_off + hdrs_len;
-	cur_pak_info.L4_proto = ip_hdr->protocol;
+	cur_pak_info.L4_proto = l4_protocol;
 	return cur_pak_info.L4_proto;
 }
 
-void update_ipv4(char *value)
+void update_ip(char *value)
 {
 	struct iphdr *ip_hdr;
 	struct grehdr *gre_hdr;

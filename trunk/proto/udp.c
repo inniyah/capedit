@@ -25,8 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "ipv4.h"
-#include "ipv6.h"
+#include "ip.h"
 #include"../main.h"
 #include "../packet.h"
 #include "udp.h"

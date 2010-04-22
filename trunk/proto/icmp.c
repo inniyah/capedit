@@ -23,7 +23,7 @@
 
 #include "../main.h"
 #include "icmp.h"
-#include "ipv4.h"
+#include "ip.h"
 #include "../packet.h"
 
 void
