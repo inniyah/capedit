@@ -511,7 +511,7 @@ update_mac_ip(const gchar *src_mac, const gchar *dst_mac, const gchar *src_ip, c
                                                 tcp_hdr->check = ComputeTCPChecksum(tcp_hdr, ip_hdr);
 						return (1);
                                         }
-                        } else if (ip_hdr->protocol == 0x02) {
+                        } else if ((ip_hdr->protocol == 0x02) || (ip_hdr->protocol == 0x01)) {
                                         if (pak_reversed == 0) {
                                                 pak_val_update(eth_hdr->h_source, src_mac, MAC);
                                                 pak_val_update(eth_hdr->h_dest, dst_mac, MAC);
