@@ -306,7 +306,7 @@ update_L2(char *value)
 void
 update_L3(char *value)
 {
-	if ((p_ref_proto == P_IPV4) || (p_ref_proto == P_GRE_IP)) {
+	if ((p_ref_proto == P_IPV4) || (p_ref_proto == P_GRE_IP) || (p_ref_proto == P_IPV6)) {
 		update_ip(value);
 
 	} else if (p_ref_proto == P_ARP) {

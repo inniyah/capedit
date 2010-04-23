@@ -120,21 +120,23 @@ iphdr_parse:
         	ip6_hdr = (struct ip6hdr *)*pak;
         	ptree_append ("Internet Protocol(IPv6)",NULL,STRING,0, P_IPV6,0);
         	temp = pak_get_bits_uint32(ip6_hdr->vtf, 31, 4);
-        	ptree_append ("Version:",&temp,UINT8,1, P_IPV6,0);
+        	ptree_append ("Version:",&temp,UINT8,1, P_IPV6, 1, iphdr_no);
         	temp = pak_get_bits_uint32(ip6_hdr->vtf, 27, 8);
-        	ptree_append("Tos:",&temp,UINT8_HEX_1,1, P_IPV6,0);
+        	ptree_append("Tos:",&temp,UINT8_HEX_1,1, P_IPV6, 1, iphdr_no);
         	temp = pak_get_bits_uint32(ip6_hdr->vtf, 19, 20);
-        	ptree_append("Flow Label:",&temp,UINT32,1, P_IPV6,0);
-        	ptree_append("Payload Length:",&ip6_hdr->payload_length,UINT16,1, P_IPV6,0);
-        	ptree_append("Next Header:", &ip6_hdr->next_header, UINT8,1, P_IPV6,0);
-        	ptree_append("Hop Limit:",&ip6_hdr->hop_limit, UINT8, 1, P_IPV6,0);
-        	ptree_append("Source IP:",&(ip6_hdr->saddr),IPV6_ADDR,1, P_IPV6,0);
-        	ptree_append("Destination IP:",&(ip6_hdr->daddr),IPV6_ADDR,1, P_IPV6,0);
+        	ptree_append("Flow Label:",&temp,UINT32,1, P_IPV6, 1, iphdr_no);
+        	ptree_append("Payload Length:",&ip6_hdr->payload_length,UINT16,1, P_IPV6, 1, iphdr_no);
+        	ptree_append("Next Header:", &ip6_hdr->next_header, UINT8,1, P_IPV6, 1, iphdr_no);
+        	ptree_append("Hop Limit:",&ip6_hdr->hop_limit, UINT8, 1, P_IPV6, 1, iphdr_no);
+        	ptree_append("Source IP:",&(ip6_hdr->saddr),IPV6_ADDR,1, P_IPV6, 1, iphdr_no);
+        	ptree_append("Destination IP:",&(ip6_hdr->daddr),IPV6_ADDR,1, P_IPV6, 1, iphdr_no);
 		hdrs_len += sizeof(struct ip6hdr);
+		*pak += sizeof(struct ip6hdr);
 		l4_protocol = ip6_hdr->next_header;
+		++iphdr_no;
 	}
 
-	if (l4_protocol == 0x04) {
+	if (l4_protocol == 0x04/*ipv4*/ || l4_protocol == 0x29/*ipv6*/) {
 		goto iphdr_parse;
 	}
 
@@ -201,6 +203,7 @@ iphdr_parse:
 void update_ip(char *value)
 {
 	struct iphdr *ip_hdr;
+	struct ip6hdr *ip6_hdr;
 	struct grehdr *gre_hdr;
 	uint8_t grehdr_len = 0;
 	uint8_t sre_present = 0;
@@ -211,6 +214,8 @@ void update_ip(char *value)
         struct udphdr *udp_hdr;
 	uint8_t *pak;
 	uint8_t i = 0;
+	uint8_t l4_protocol  = 0;
+	uint16_t l3_protocol = 0;
 	
 	pak = (uint8_t *)(fpak_curr_info->pak + cur_pak_info.L3_off);
 	if (p_ref_proto == P_IPV4) {
@@ -281,6 +286,52 @@ void update_ip(char *value)
 			tcp_hdr = (struct tcphdr *)(((uint8_t *)ip_hdr) + (ip_hdr->ihl * 4));
 			tcp_hdr->check = ComputeTCPChecksum(tcp_hdr, ip_hdr);
 		}
+	}
+	if (p_ref_proto == P_IPV6) {
+                ip6_hdr = (struct ip6hdr *)pak;
+		l4_protocol = ip6_hdr->next_header;
+                for (i = 0; (record_l1 > 0) && (i < record_l1); i++) {
+                        if (l4_protocol == 0x2f) {
+                                pak += sizeof(struct ip6hdr);
+                                gre_hdr = (struct grehdr *)pak;
+                                if (pak_get_bits_uint16(gre_hdr->fandv, 15, 1) ||
+                                        pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
+                                        pak += 8;
+                                } else {
+                                        pak += 4;
+                                }
+                                if (pak_get_bits_uint16(gre_hdr->fandv, 13, 1)) {
+                                        pak += 4;
+                                }
+                                if (pak_get_bits_uint16(gre_hdr->fandv, 12, 1)) {
+                                        pak += 4;
+                                }
+                                if (pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
+                                        for (sre_hdr = (struct sre *)pak;(sre_hdr->af != 0x0000) && (sre_hdr->offset != 0);) {
+                                                pak += (sizeof(struct sre) + sre_hdr->offset);
+                                                sre_hdr = (struct sre *)pak;
+                                        }
+                                }
+                                ip6_hdr = (struct ip6hdr *)pak;
+                        }
+                }
+                if (!strcmp(ptype,"Version:")) {
+                        ip6_hdr->vtf = pak_set_bits_uint32D(ip6_hdr->vtf, 31, 4, value);
+                } else if (!strcmp(ptype,"Tos:")) {
+                        ip6_hdr->vtf = pak_set_bits_uint32_hex(ip6_hdr->vtf, 27, 8, value);
+                } else if (!strcmp(ptype,"Flow Label:")) {
+                        ip6_hdr->vtf = pak_set_bits_uint32(ip6_hdr->vtf, 19, 20, value);
+                } else if (!strcmp(ptype,"Payload Length:")) {
+                        pak_val_update(&ip6_hdr->payload_length, value, UINT16);
+                } else if (!strcmp(ptype,"Next Header:")) {
+                        pak_val_update(&ip6_hdr->next_header, value, UINT8);
+                } else if (!strcmp(ptype,"Hop Limit:")) {
+			pak_val_update(&ip6_hdr->hop_limit, value, UINT8);
+                } else if (!strcmp(ptype,"Source IP:")) {
+			pak_val_update(&ip6_hdr->saddr, value, IPV6_ADDR);
+                } else if (!strcmp(ptype,"Destination IP:")) {
+			pak_val_update(&ip6_hdr->daddr, value, IPV6_ADDR);
+                }
 	}
 	if (p_ref_proto == P_GRE_IP) {
 		ip_hdr = (struct iphdr *)pak;

@@ -197,6 +197,21 @@ pak_set_bits_uint16_hex(uint16_t param, uint8_t position, uint8_t no_bits, char 
 	}
 }
 
+uint32_t
+pak_set_bits_uint32_hex(uint32_t param, uint8_t position, uint8_t no_bits, char *value)
+{
+        char buf[20];
+        uint32_t i32;
+        if (!strncasecmp("0x", value, 2)) {
+                sprintf(buf,"%s",&value[2]);
+                i32 = atoh(buf);
+                param = ntohs(param);
+                return htons(setbits(param, position, no_bits, i32));
+        } else {
+                err_val = 3;
+        }
+}
+
 void pak_val_update(void *param, char *value, uint16_t type)
 {
 	struct in_addr;
