@@ -54,7 +54,7 @@ frag_pak (struct pak_file_info *fpak_info, uint16_t size)
 		fpak_info->pak = p->buffer;
 		fpak_info->pak_len = p->cap_len;
 	}
-	pak = fpak_curr_info->pak;
+	pak = fpak_info->pak;
 	eth_hdr = (struct ethhdr *)pak;
 	protocol = ntohs(eth_hdr->h_proto);
 	pak += sizeof(struct ethhdr);

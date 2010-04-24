@@ -415,6 +415,27 @@ pl_display_modified_iter()
 }
 
 static void
+convert_to_ipv6 (GtkWidget *w,
+          gpointer   data )
+{
+	struct pak_file_info *fpak_curr_next = NULL;
+
+        if (p == NULL) {
+                goto ipv6_end;
+        }
+
+	fpak_curr_info = pak_list_get(1);
+	for (; fpak_curr_info  != NULL; ) {
+		fpak_curr_next = fpak_curr_info->next;
+		to_ipv6(fpak_curr_info);
+		fpak_curr_info = fpak_curr_next;
+	}
+	pl_display_modified_iter();	
+ipv6_end:
+	;
+}
+
+static void
 add_mpls_tag (GtkWidget *w,
           gpointer   data )
 {
@@ -853,7 +874,7 @@ file_open_cmd_cb(GtkWidget *w, gpointer data) {
 	GtkWidget *win;
 	char *fname;
 
-	win = gtk_file_chooser_dialog_new("Open pcap file", GTK_WINDOW(w), GTK_FILE_CHOOSER_ACTION_OPEN, 
+	win = gtk_file_chooser_dialog_new("Open pcap file", GTK_WINDOW(top_level), GTK_FILE_CHOOSER_ACTION_OPEN, 
 				      GTK_STOCK_CANCEL,
      				      GTK_RESPONSE_CANCEL, GTK_STOCK_OPEN,
      				      GTK_RESPONSE_OK,
@@ -878,9 +899,10 @@ static GtkItemFactoryEntry menu_items[] = {
   { "/File/sep1",     NULL,         NULL,           0, "<Separator>" },
   { "/File/_Quit",    "<CTRL>Q", gtk_main_quit, 0, "<StockItem>", GTK_STOCK_QUIT },
   { "/_Edit",         NULL,         NULL,           0, "<Branch>" },
-  { "/Edit/_Fragment Packets",    "<control>F", fragment_packets, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
-  { "/Edit/_Add VLAN Tag",    "<control>V", add_vlan_tag, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
-  { "/Edit/_Add MPLS Tag",    "<control>M", add_mpls_tag, 0, "<StockItem>", GTK_STOCK_MEDIA_STOP },
+  { "/Edit/_Add VLAN Tag (All Packets)",    "<control>V", add_vlan_tag, 0, "<Item>", NULL},
+  { "/Edit/_Add MPLS Tag (All IPv4 Packets)",    "<control>M", add_mpls_tag, 0, "<Item>", NULL},
+  { "/Edit/_Convert To IPv6 (All IPv4 Packets)",    "<control>6", convert_to_ipv6, 0, "<Item>", NULL},
+  { "/Edit/_Fragment Packets (All IPv4 Packets)",    "<control>F", fragment_packets, 0, "<Item>", NULL},
   { "/_Help",         NULL,         NULL,           0, "<Branch>" },
   { "/_Help/About",   NULL,         NULL,           0, "<Item>" },
 };
@@ -1678,7 +1700,7 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
     dup_val    = gtk_menu_item_new_with_label("Create Duplicate");
     frag_val   = gtk_menu_item_new_with_label("Fragment Packet");
     vtag_val   = gtk_menu_item_new_with_label("Add VLAN Tag");
-    mpls_val   = gtk_menu_item_new_with_label("Add MPLS Tag");
+    mpls_val   = gtk_menu_item_new_with_label("Add MPLS Tag (ipv4 only)");
  
     
     g_signal_connect(stream_val, "activate",
@@ -1697,7 +1719,7 @@ pl_popup_menu (GtkWidget *treeview, GdkEventButton *event, gpointer userdata)
                      (GCallback) pl_view_popup_menu_add_mtag, pl_treeview);
 
  
-    if ((cur_pak_info.L4_proto == 0x11) || (cur_pak_info.L4_proto == 0x06)) {
+    if ((cur_pak_info.L4_proto == 0x11) || (cur_pak_info.L4_proto == 0x06) && (cur_pak_info.L3_proto == 0x0800)) {
     	gtk_menu_shell_append(GTK_MENU_SHELL(menu), stream_val);
     }
     if (cur_pak_info.L3_proto == 0x0800) {

@@ -547,3 +547,77 @@ update_mac_ip(const gchar *src_mac, const gchar *dst_mac, const gchar *src_ip, c
         }
 	return (0);
 }
+
+void
+to_ipv6 (struct pak_file_info *fpak_info)
+{
+        void *pak = NULL;
+	void *pak_start = NULL;
+        uint8_t *new_pak = NULL;
+        uint8_t *data = NULL;
+        uint16_t data_len = 0;
+        uint16_t hdrs_len = 0;
+        uint16_t pad = 0;
+        uint16_t ip_offset = 0;
+        uint16_t data_offset = 0;
+        struct ethhdr *eth_hdr;
+        struct vlan_802_1q *vlan_hdr;
+        struct iphdr  *ip_hdr;
+	struct ip6hdr ip6_hdr;
+        uint16_t protocol;
+        struct pak_file_info *temp_fpak_info;
+        struct pak_file_info *last, *temp_fpak_prev;
+
+
+        if (fpak_info->mem_alloc == 0) {
+                fseek(p->rfile,fpak_info->offset,0);
+                p->buffer = p->base;
+                pcap_offline_read(p,1);
+                fpak_info->pak = p->buffer;
+                fpak_info->pak_len = p->cap_len;
+        }
+        pak_start = pak = fpak_info->pak;
+        eth_hdr = (struct ethhdr *)pak;
+        protocol = ntohs(eth_hdr->h_proto);
+        pak += sizeof(struct ethhdr);
+        hdrs_len += sizeof(struct ethhdr);
+        for (;protocol == 0x8100;) {
+                vlan_hdr = (struct vlan_802_1q *)pak;
+                protocol = ntohs(vlan_hdr->protocol);
+                pak += sizeof(struct vlan_802_1q);
+                hdrs_len += sizeof(struct vlan_802_1q);
+        }
+        for (;protocol == 0x8847;) {
+                hdrs_len += sizeof(struct mplshdr);
+                if (pak_get_bits_uint32(*(uint32_t *)pak, 8, 1) == 1) {
+                        protocol = 0x0800;
+                        pak += sizeof(struct mplshdr);
+                        break;
+                }
+                pak += sizeof(struct mplshdr);
+        }
+        if (protocol == 0x0800) {
+		eth_hdr->h_proto = 0xDD86;
+                ip_hdr = (struct iphdr *)pak;
+                data_len = ntohs(ip_hdr->tot_len) - (ip_hdr->ihl * 4);
+                pak += (ip_hdr->ihl * 4);
+                data = (uint8_t *)pak;
+        	new_pak = (uint8_t *)malloc(hdrs_len + sizeof(struct ip6hdr) + data_len);
+        	memcpy(new_pak, pak_start, hdrs_len);
+		memset((void *)&ip6_hdr, 0, sizeof(ip6_hdr));
+		ip6_hdr.next_header = ip_hdr->protocol;
+		ip6_hdr.saddr.__in6_u.__u6_addr32[3] = ip_hdr->saddr;
+		ip6_hdr.daddr.__in6_u.__u6_addr32[3] = ip_hdr->daddr;
+        	memcpy((new_pak + hdrs_len), (uint8_t *)&ip6_hdr, sizeof(struct ip6hdr));
+        	memcpy((new_pak + hdrs_len + sizeof(struct ip6hdr)),
+                data, (fpak_info->pak_hdr.caplen - hdrs_len - ip_hdr->ihl * 4));
+        	if (fpak_info->mem_alloc == 1) {
+                	free(fpak_info->pak);
+        	}
+        	fpak_info->mem_alloc = 1;
+        	fpak_info->pak = new_pak;
+        	fpak_info->pak_hdr.caplen = hdrs_len + sizeof(struct ip6hdr) + data_len;
+        	fpak_info->pak_len = fpak_info->pak_hdr.len = fpak_info->pak_hdr.caplen;
+        }
+}
+
