@@ -104,7 +104,7 @@ iphdr_parse:
 			pak_info->proto  = ip6_hdr->next_header;
 			tptr += sizeof(struct ip6hdr);
 		}
-		if (pak_info->proto == 0x04) {
+		if (pak_info->proto == 0x04 || pak_info->proto == 0x29) {
 			goto iphdr_parse;
 		}
 		if (pak_info->proto == 0x2f) {
@@ -127,6 +127,7 @@ iphdr_parse:
 					sre_hdr = (struct sre *)tptr;
 				}
                         } 
+			pak_info->eth_proto = ntohs(gre_hdr->protocol);
 			goto iphdr_parse;
 		}
 		if (pak_info->proto == 0x11) {
@@ -169,15 +170,12 @@ iphdr_parse:
 			} else {
 				sprintf(pak_info->info, "icmp type=%d code=%d", icmp_hdr->type, icmp_hdr->code);
 			}
-		} else if (pak_info->proto == 0x2f) {
-			sprintf(pak_info->protocol, "GRE");
-			sprintf(pak_info->info, " GRE Not Supported");
                 } else if (pak_info->proto == 0x02) {
                         sprintf(pak_info->protocol, "IGMP");
                         sprintf(pak_info->info, "igmp packet");
 			strcpy(pak_info->row_color, "#FFF3D5");
 		} else {
-			sprintf(pak_info->protocol, "0x%02x", ip_hdr->protocol);
+			sprintf(pak_info->protocol, "0x%02x", pak_info->proto);
 			sprintf(pak_info->info, "NOT SUPPORTED");
 			strcpy(pak_info->row_color, "red");
 		}

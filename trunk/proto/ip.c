@@ -124,7 +124,7 @@ iphdr_parse:
         	temp = pak_get_bits_uint32(ip6_hdr->vtf, 27, 8);
         	ptree_append("Tos:",&temp,UINT8_HEX_1,1, P_IPV6, 1, iphdr_no);
         	temp = pak_get_bits_uint32(ip6_hdr->vtf, 19, 20);
-        	ptree_append("Flow Label:",&temp,UINT32,1, P_IPV6, 1, iphdr_no);
+        	ptree_append("Flow Label:",&temp,UINT32_HEX_5, 1, P_IPV6, 1, iphdr_no);
         	ptree_append("Payload Length:",&ip6_hdr->payload_length,UINT16,1, P_IPV6, 1, iphdr_no);
         	ptree_append("Next Header:", &ip6_hdr->next_header, UINT8,1, P_IPV6, 1, iphdr_no);
         	ptree_append("Hop Limit:",&ip6_hdr->hop_limit, UINT8, 1, P_IPV6, 1, iphdr_no);
@@ -161,8 +161,9 @@ iphdr_parse:
                 temp = pak_get_bits_uint16(gre_hdr->fandv, 2, 3);
                 ptree_append("Version:",&temp, UINT8, 2, P_GRE_IP, 1, grehdr_no);
                 temp = pak_get_bits_uint16(gre_hdr->fandv, 10, 3);
-		ptree_append("Protocol Type:",&gre_hdr->protocol, UINT16_HEX, 2, P_GRE_IP, 1, grehdr_no);
+		ptree_append("Protocol Type:",&gre_hdr->protocol, UINT16_HEX, 1, P_GRE_IP, 1, grehdr_no);
 		*pak += 4;
+		hdrs_len += 4;
 		if (pak_get_bits_uint16(gre_hdr->fandv, 15, 1) ||
 		    pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
 			ptree_append("Checksum:",&gre_hdr->csum, UINT16_HEX, 1, P_GRE_IP, 1, grehdr_no);
@@ -192,6 +193,7 @@ iphdr_parse:
 			}
 		}
 		grehdr_no++;
+		l3_protocol = ntohs(gre_hdr->protocol);
 		goto iphdr_parse;
 	}
 
@@ -216,13 +218,23 @@ void update_ip(char *value)
 	uint8_t i = 0;
 	uint8_t l4_protocol  = 0;
 	uint16_t l3_protocol = 0;
+	uint16_t cur_protocol = 0;
+	uint8_t ver = 0;
 	
 	pak = (uint8_t *)(fpak_curr_info->pak + cur_pak_info.L3_off);
 	if (p_ref_proto == P_IPV4) {
-		ip_hdr = (struct iphdr *)pak;
+		if (cur_pak_info.L3_proto == 0x0800) {
+			ip_hdr = (struct iphdr *)pak;
+			cur_protocol = ip_hdr->protocol;
+			ver = 4;
+		} else if (cur_pak_info.L3_proto == 0x86DD) {
+			ip6_hdr = (struct ip6hdr *)pak;
+			cur_protocol = ip6_hdr->next_header;
+			ver = 6;
+		}
 		for (i = 0; (record_l1 > 0) && (i < record_l1); i++) {
-			if (ip_hdr->protocol == 0x2f) {
-				pak += (ip_hdr->ihl * 4);
+			if (cur_protocol == 0x2f) {
+				pak += (ver == 4)?(ip_hdr->ihl * 4):(sizeof(struct ip6hdr));
                   	        gre_hdr = (struct grehdr *)pak;
                         	if (pak_get_bits_uint16(gre_hdr->fandv, 15, 1) ||
                             		pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
@@ -242,7 +254,20 @@ void update_ip(char *value)
                                         	sre_hdr = (struct sre *)pak;
                                 	}
                         	}
-				ip_hdr = (struct iphdr *)pak;	
+				cur_protocol = ntohs(gre_hdr->protocol);
+				if (cur_protocol == 0x0800) {
+					ip_hdr = (struct iphdr *)pak;	
+				} else if (cur_protocol == 0x86DD) {
+					ip6_hdr = (struct ip6hdr *)pak;
+				}
+			} else if (cur_protocol == 0x04) {
+				pak += (ip_hdr->ihl * 4);
+				ip_hdr = (struct iphdr *)pak;
+				cur_protocol = ip_hdr->protocol;
+			} else if (cur_protocol == 0x29) {
+				pak += (sizeof(struct ip6hdr));
+				ip6_hdr = (struct ip6hdr *)pak;
+				cur_protocol = ip6_hdr->next_header;
 			}
 		} 
 		if (!strcmp(ptype,"Version:")) {
@@ -288,11 +313,18 @@ void update_ip(char *value)
 		}
 	}
 	if (p_ref_proto == P_IPV6) {
-                ip6_hdr = (struct ip6hdr *)pak;
-		l4_protocol = ip6_hdr->next_header;
+                if (cur_pak_info.L3_proto == 0x0800) {
+                        ip_hdr = (struct iphdr *)pak;
+                        cur_protocol = ip_hdr->protocol;
+                        ver = 4;
+                } else if (cur_pak_info.L3_proto == 0x86DD) {
+                        ip6_hdr = (struct ip6hdr *)pak;
+                        cur_protocol = ip6_hdr->next_header;
+                        ver = 6;
+                }
                 for (i = 0; (record_l1 > 0) && (i < record_l1); i++) {
-                        if (l4_protocol == 0x2f) {
-                                pak += sizeof(struct ip6hdr);
+                        if (cur_protocol == 0x2f) {
+				pak += (ver == 4)?(ip_hdr->ihl * 4):(sizeof(struct ip6hdr));
                                 gre_hdr = (struct grehdr *)pak;
                                 if (pak_get_bits_uint16(gre_hdr->fandv, 15, 1) ||
                                         pak_get_bits_uint16(gre_hdr->fandv, 14, 1)) {
@@ -312,7 +344,20 @@ void update_ip(char *value)
                                                 sre_hdr = (struct sre *)pak;
                                         }
                                 }
+                                cur_protocol = ntohs(gre_hdr->protocol);
+                                if (cur_protocol == 0x0800) {
+                                        ip_hdr = (struct iphdr *)pak;
+                                } else if (cur_protocol == 0x86DD) {
+                                        ip6_hdr = (struct ip6hdr *)pak;
+                                }
+                        } else if (cur_protocol == 0x04) {
+                                pak += (ip_hdr->ihl * 4);
+                                ip_hdr = (struct iphdr *)pak;
+                                cur_protocol = ip_hdr->protocol;
+                        } else if (cur_protocol == 0x29) {
+                                pak += (sizeof(struct ip6hdr));
                                 ip6_hdr = (struct ip6hdr *)pak;
+                                cur_protocol = ip6_hdr->next_header;
                         }
                 }
                 if (!strcmp(ptype,"Version:")) {
@@ -320,7 +365,7 @@ void update_ip(char *value)
                 } else if (!strcmp(ptype,"Tos:")) {
                         ip6_hdr->vtf = pak_set_bits_uint32_hex(ip6_hdr->vtf, 27, 8, value);
                 } else if (!strcmp(ptype,"Flow Label:")) {
-                        ip6_hdr->vtf = pak_set_bits_uint32(ip6_hdr->vtf, 19, 20, value);
+                        ip6_hdr->vtf = pak_set_bits_uint32_hex(ip6_hdr->vtf, 19, 20, value);
                 } else if (!strcmp(ptype,"Payload Length:")) {
                         pak_val_update(&ip6_hdr->payload_length, value, UINT16);
                 } else if (!strcmp(ptype,"Next Header:")) {

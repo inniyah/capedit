@@ -105,7 +105,9 @@ void
 update_udp(char *value)
 {
 	struct udphdr *udp_hdr;
+	struct iphdr  *ip_hdr;
 
+	ip_hdr  = (struct iphdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
 	udp_hdr = (struct udphdr *)(fpak_curr_info->pak + cur_pak_info.L4_off);
 
 	if (!strcmp(ptype,"Source Port:")) {
@@ -117,5 +119,5 @@ update_udp(char *value)
         } else if (!strcmp(ptype,"Checksum:")) {
 		pak_val_update(&udp_hdr->check, value, UINT16_HEX);
 	}
-
+	udp_hdr->check = ComputeUDPChecksum(udp_hdr, ip_hdr);
 }

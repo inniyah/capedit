@@ -205,8 +205,8 @@ pak_set_bits_uint32_hex(uint32_t param, uint8_t position, uint8_t no_bits, char 
         if (!strncasecmp("0x", value, 2)) {
                 sprintf(buf,"%s",&value[2]);
                 i32 = atoh(buf);
-                param = ntohs(param);
-                return htons(setbits(param, position, no_bits, i32));
+                param = ntohl(param);
+                return htonl(setbits(param, position, no_bits, i32));
         } else {
                 err_val = 3;
         }
@@ -225,6 +225,7 @@ void pak_val_update(void *param, char *value, uint16_t type)
 	uint32_t *p32;
 	uint32_t  i32;
 	struct ether_addr *eth;
+	uint8_t porf;
 
 	if (type == UINT8) {
 		p8 = (uint8_t *)param;
@@ -241,7 +242,7 @@ void pak_val_update(void *param, char *value, uint16_t type)
 	} else if (type == UINT16D) {
 		p16 = (uint16_t *)param;
 		i16 = atoi(value);
-		*p16 = ntohs(i16);
+		*p16 = htons(i16);
         } else if (type == UINT16) {
                 p16 = (uint16_t *)param;
                 i16 = atoi(value);
@@ -259,7 +260,7 @@ void pak_val_update(void *param, char *value, uint16_t type)
 	} else if (type == UINT32D) {
                 p32 = (uint32_t *)param;
                 i32 = atoi(value);
-                i32 = ntohs(i32);
+                i32 = ntohl(i32);
                 *p32 = i32;
 	} else if (type == MAC) {
 		eth = (struct ether_addr *)ether_aton(value);
@@ -280,6 +281,12 @@ void pak_val_update(void *param, char *value, uint16_t type)
 				err_val = 1;
 			}
 		}
+	} else if (type == IPV6_ADDR) {
+		porf = inet_pton(AF_INET6, value, param);
+		if (porf <= 0) {
+			err_val = 5;
+           	}
+
 	}
 
 }

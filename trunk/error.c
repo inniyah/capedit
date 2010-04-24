@@ -63,6 +63,8 @@ error_val ()
 		error_dialog("Not a HEX value - please enter correct HEX value {Ex:0x23}");
 	} else if (err_val == 4) {
 		error_dialog("Must be 0 or 1");
+	} else if (err_val == 5) {
+		error_dialog("Wrong IPv6 Address - Not in presentation format");
 	}
 
 }

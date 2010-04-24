@@ -687,9 +687,13 @@ ptree_append(char *param, void *value, uint8_t type, uint8_t level, uint16_t p_r
         } else if(type == UINT8_HEX_1) {
                 sprintf(buf, "0x%d", *(uint8_t *)value);
 	} else if (type == UINT32) {
-		sprintf(buf, "%u", ntohl(*((uint16_t *)value)));
+		sprintf(buf, "%u", ntohl(*((uint32_t *)value)));
         } else if (type == UINT32D) {
-                sprintf(buf, "%u", *((uint16_t *)value));
+                sprintf(buf, "%u", *((uint32_t *)value));
+        } else if (type == UINT32_HEX) {
+                sprintf(buf, "0x%08x", ntohl(*((uint32_t *)value)));
+        } else if (type == UINT32_HEX_5) {
+                sprintf(buf, "0x%05x", *((uint32_t *)value));
 	} else if (type == STRING) {
 		sprintf(buf," ");
 	} else if (type == IPV4_ADDR) {
@@ -697,8 +701,8 @@ ptree_append(char *param, void *value, uint8_t type, uint8_t level, uint16_t p_r
 		sprintf(buf, "%s", temp_val);
 		free(temp_val);
 	}else if (type == IPV6_ADDR) {
-        inet_ntop(AF_INET6, value, buf, 128);
-    }
+        	inet_ntop(AF_INET6, value, buf, 128);
+        }
 	append_p_tree_data(param,buf,level,p_ref_proto,rl1,rl2);
 
 }

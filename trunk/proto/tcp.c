@@ -92,8 +92,8 @@ display_tcp(uint8_t **pak)
 	tcp_hdr = (struct tcphdr *)*pak;
 
 	ptree_append ("Transmission Control Protocol", NULL, STRING, 0, P_TCP, 0);
-	ptree_append("Source port:", &tcp_hdr->source, UINT16, 1, P_TCP, 0);
-	ptree_append("Destination port:", &tcp_hdr->dest, UINT16, 1, P_TCP, 0);
+	ptree_append("Source Port:", &tcp_hdr->source, UINT16, 1, P_TCP, 0);
+	ptree_append("Destination Port:", &tcp_hdr->dest, UINT16, 1, P_TCP, 0);
 	ptree_append("Sequence number:", &tcp_hdr->seq, UINT32, 1, P_TCP, 0);
 	ptree_append("Acknowledgement number:", &tcp_hdr->ack_seq, UINT32, 1, P_TCP, 0);
 	i8 = tcp_hdr->doff;
@@ -131,9 +131,11 @@ void
 update_tcp(char *value)
 {
 	struct tcphdr *tcp_hdr;
+	struct iphdr *ip_hdr;
 	uint8_t i8;
 	uint8_t *p8;
 
+	ip_hdr  = (struct iphdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
 	tcp_hdr = (struct tcphdr *)(fpak_curr_info->pak + cur_pak_info.L4_off);
 
 	if (!strcmp(ptype,"Source Port:")) {
@@ -147,7 +149,8 @@ update_tcp(char *value)
         } else if (!strcmp(ptype,"Data offset:")) {
 		tcp_hdr->doff = atoi(value);
         } else if (!strcmp(ptype,"Reserved:")) {
-		tcp_hdr->res1 = atoi(value);
+		pak_val_update(&i8, value, UINT8_HEX_2);
+		tcp_hdr->res1 = i8;
         } else if (!strcmp(ptype,"Flags:")) {
 		p8 = (((uint8_t *)&tcp_hdr->ack_seq) + 5);
 		i8 = (uint8_t)*(((uint8_t *)&tcp_hdr->ack_seq) + 5);
@@ -176,4 +179,5 @@ update_tcp(char *value)
         } else if (!strcmp(ptype,"Urgent pointer:")) {
 		pak_val_update(&tcp_hdr->urg_ptr, value, UINT16D);
         }
+	tcp_hdr->check = ComputeTCPChecksum(tcp_hdr, ip_hdr);
 }
