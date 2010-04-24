@@ -564,6 +564,8 @@ to_ipv6 (struct pak_file_info *fpak_info)
         struct vlan_802_1q *vlan_hdr;
         struct iphdr  *ip_hdr;
 	struct ip6hdr ip6_hdr;
+	struct tcphdr *tcp_hdr;
+	struct udphdr *udp_hdr;
         uint16_t protocol;
         struct pak_file_info *temp_fpak_info;
         struct pak_file_info *last, *temp_fpak_prev;
@@ -608,6 +610,16 @@ to_ipv6 (struct pak_file_info *fpak_info)
 		ip6_hdr.next_header = ip_hdr->protocol;
 		ip6_hdr.saddr.__in6_u.__u6_addr32[3] = ip_hdr->saddr;
 		ip6_hdr.daddr.__in6_u.__u6_addr32[3] = ip_hdr->daddr;
+		ip6_hdr.payload_length = htons(data_len);
+		if (ip6_hdr.next_header == 0x11) {
+			udp_hdr = (struct udphdr *)data;
+			udp_hdr->check = 0;
+			udp_hdr->check = chksum_v6 (data, data_len, &ip6_hdr.saddr, &ip6_hdr.daddr, ip6_hdr.next_header);
+		} else if (ip6_hdr.next_header == 0x06) {
+			tcp_hdr = (struct tcphdr *)data;
+			tcp_hdr->check = 0;
+			tcp_hdr->check = chksum_v6 (data, data_len, &ip6_hdr.saddr, &ip6_hdr.daddr, ip6_hdr.next_header);
+		}
         	memcpy((new_pak + hdrs_len), (uint8_t *)&ip6_hdr, sizeof(struct ip6hdr));
         	memcpy((new_pak + hdrs_len + sizeof(struct ip6hdr)),
                 data, (fpak_info->pak_hdr.caplen - hdrs_len - ip_hdr->ihl * 4));

@@ -29,6 +29,43 @@
 #include "../main.h"
 #include "../packet.h"
 
+typedef struct v6_PseudoHeader{
+
+	struct   inipv6_addr saddr;
+	struct   inipv6_addr daddr;
+	uint32_t tcp_length;
+	uint8_t  zeros[3];
+	uint8_t  next_hdr;
+
+}v6_PseudoHeader;
+
+unsigned short chksum_v6(void* buff, int len, struct inipv6_addr* src, struct inipv6_addr* dst,
+                         uint16_t upproto)
+{
+	uint16_t check_sum = 0;
+	struct tcphdr *tcp_hdr = (struct tcphdr *)buff;
+
+	uint16_t header_len = sizeof(v6_PseudoHeader) + len;
+	uint8_t *hdr = (uint8_t *)calloc(1, header_len);
+
+	v6_PseudoHeader *pseudo_header = (v6_PseudoHeader *)hdr;
+
+	memcpy(&pseudo_header->saddr, src, sizeof(struct inipv6_addr));
+	memcpy(&pseudo_header->daddr, dst, sizeof(struct inipv6_addr));
+	pseudo_header->tcp_length = ntohl(len);
+	pseudo_header->next_hdr = upproto;
+
+	tcp_hdr->check = 0;
+	memcpy((hdr + sizeof(v6_PseudoHeader)), buff, len);
+	
+	check_sum = in_cksum((u_short *)hdr, header_len);
+
+	free(hdr);
+
+        return check_sum;	
+	
+}
+
 
 typedef struct PseudoHeader{
 
@@ -132,10 +169,10 @@ update_tcp(char *value)
 {
 	struct tcphdr *tcp_hdr;
 	struct iphdr *ip_hdr;
+	struct ip6hdr *ip6_hdr;
 	uint8_t i8;
 	uint8_t *p8;
 
-	ip_hdr  = (struct iphdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
 	tcp_hdr = (struct tcphdr *)(fpak_curr_info->pak + cur_pak_info.L4_off);
 
 	if (!strcmp(ptype,"Source Port:")) {
@@ -179,5 +216,12 @@ update_tcp(char *value)
         } else if (!strcmp(ptype,"Urgent pointer:")) {
 		pak_val_update(&tcp_hdr->urg_ptr, value, UINT16D);
         }
-	tcp_hdr->check = ComputeTCPChecksum(tcp_hdr, ip_hdr);
+	if (cur_pak_info.L3_proto == 0x0800) {
+		ip_hdr = (struct iphdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
+		tcp_hdr->check = ComputeTCPChecksum(tcp_hdr, ip_hdr);
+	} else if (cur_pak_info.L3_proto == 0x86DD) {
+		ip6_hdr = (struct ip6hdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
+		tcp_hdr->check = 0;
+		tcp_hdr->check = chksum_v6 ((void *)tcp_hdr, ntohs(ip6_hdr->payload_length), &(ip6_hdr->saddr), &(ip6_hdr->daddr), ip6_hdr->next_header);
+	}
 }

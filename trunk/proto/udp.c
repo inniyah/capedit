@@ -106,6 +106,7 @@ update_udp(char *value)
 {
 	struct udphdr *udp_hdr;
 	struct iphdr  *ip_hdr;
+	struct ip6hdr *ip6_hdr;
 
 	ip_hdr  = (struct iphdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
 	udp_hdr = (struct udphdr *)(fpak_curr_info->pak + cur_pak_info.L4_off);
@@ -119,5 +120,12 @@ update_udp(char *value)
         } else if (!strcmp(ptype,"Checksum:")) {
 		pak_val_update(&udp_hdr->check, value, UINT16_HEX);
 	}
-	udp_hdr->check = ComputeUDPChecksum(udp_hdr, ip_hdr);
+        if (cur_pak_info.L3_proto == 0x0800) {
+                ip_hdr = (struct iphdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
+                udp_hdr->check = ComputeTCPChecksum(udp_hdr, ip_hdr);
+        } else if (cur_pak_info.L3_proto == 0x86DD) {
+                ip6_hdr = (struct ip6hdr *)(fpak_curr_info->pak + cur_pak_info.L3_off);
+                udp_hdr->check = 0;
+                udp_hdr->check = chksum_v6 ((void *)udp_hdr, ntohs(ip6_hdr->payload_length), &(ip6_hdr->saddr), &(ip6_hdr->daddr), ip6_hdr->next_header);
+        }
 }
