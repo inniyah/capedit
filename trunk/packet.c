@@ -604,7 +604,8 @@ to_ipv6 (struct pak_file_info *fpak_info)
                 data_len = ntohs(ip_hdr->tot_len) - (ip_hdr->ihl * 4);
                 pak += (ip_hdr->ihl * 4);
                 data = (uint8_t *)pak;
-        	new_pak = (uint8_t *)malloc(hdrs_len + sizeof(struct ip6hdr) + data_len);
+        	new_pak = (uint8_t *)malloc(hdrs_len + sizeof(struct ip6hdr) + 
+				(fpak_info->pak_hdr.caplen - hdrs_len - ip_hdr->ihl * 4));
         	memcpy(new_pak, pak_start, hdrs_len);
 		memset((void *)&ip6_hdr, 0, sizeof(ip6_hdr));
 		ip6_hdr.next_header = ip_hdr->protocol;

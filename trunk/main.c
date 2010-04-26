@@ -418,17 +418,18 @@ static void
 convert_to_ipv6 (GtkWidget *w,
           gpointer   data )
 {
+	struct pak_file_info *fpak_info = NULL;
 	struct pak_file_info *fpak_curr_next = NULL;
 
         if (p == NULL) {
                 goto ipv6_end;
         }
 
-	fpak_curr_info = pak_list_get(1);
-	for (; fpak_curr_info  != NULL; ) {
-		fpak_curr_next = fpak_curr_info->next;
-		to_ipv6(fpak_curr_info);
-		fpak_curr_info = fpak_curr_next;
+	fpak_info = pak_list_get(1);
+	for (; fpak_info  != NULL; ) {
+		fpak_curr_next = fpak_info->next;
+		to_ipv6(fpak_info);
+		fpak_info = fpak_curr_next;
 	}
 	pl_display_modified_iter();	
 ipv6_end:
