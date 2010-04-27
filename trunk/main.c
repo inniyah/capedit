@@ -1117,6 +1117,8 @@ void
 show_main_window(void)
 {
         gtk_widget_show_all (top_level);
+	gtk_window_set_policy(GTK_WINDOW(top_level), TRUE, TRUE, FALSE);
+
         gtk_main ();
 }
 
@@ -1145,7 +1147,7 @@ create_menubar(void)
         /* Finally, return the actual menu bar created by the item factory. */
         menubar = gtk_item_factory_get_widget (item_factory, "<main>");
 
-        gtk_box_pack_start (GTK_BOX (mn_vbox), menubar,FALSE, FALSE, 0);
+        gtk_box_pack_start (GTK_BOX (mn_vbox), menubar,FALSE, TRUE, 0);
 
 }
 
@@ -1820,7 +1822,7 @@ void create_packet_list_pane(void)
 	
 
         pl_scrolled_win = gtk_scrolled_window_new (NULL, NULL);
-	gtk_widget_set_size_request (pl_scrolled_win, 800, 400);
+	gtk_widget_set_size_request(pl_scrolled_win, -1, 280);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (pl_scrolled_win),
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
         gtk_container_add (GTK_CONTAINER (pl_scrolled_win), pl_treeview);
@@ -1830,7 +1832,8 @@ void create_packet_list_pane(void)
 void
 create_main_vbox(void)
 {
-	mn_vbox = gtk_vbox_new (FALSE, 2);
+	mn_vbox = gtk_vbox_new (FALSE, 0);
+	gtk_container_set_border_width(GTK_CONTAINER(mn_vbox), 1);
 	gtk_container_add (GTK_CONTAINER (top_level), mn_vbox);
 }
 
@@ -1872,7 +1875,7 @@ create_packet_display_pane()
         g_signal_connect (G_OBJECT (p_treeview), "cursor-changed",
                       G_CALLBACK (p_cur_changed), NULL);
 	p_scrolled_win = gtk_scrolled_window_new (NULL, NULL);
-	gtk_widget_set_size_request (p_scrolled_win, 800, 200);
+	gtk_widget_set_size_request(p_scrolled_win, -1, 95);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (p_scrolled_win),
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
         gtk_container_add (GTK_CONTAINER (p_scrolled_win), p_treeview);
@@ -1886,23 +1889,23 @@ create_hex_display_pane()
 
 	hex_textview = gtk_text_view_new ();
 	gtk_text_view_set_justification (GTK_TEXT_VIEW (hex_textview), GTK_JUSTIFY_FILL);
-	gtk_text_view_set_editable (GTK_TEXT_VIEW (hex_textview), FALSE);
+	gtk_text_view_set_editable (GTK_TEXT_VIEW (hex_textview), TRUE);
 
 	hex_buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (hex_textview));
 	
 
 	hex_scrolled_win = gtk_scrolled_window_new (NULL, NULL);
-	gtk_widget_set_size_request (hex_scrolled_win, 800, 150);
+	gtk_widget_set_size_request(hex_scrolled_win, -1, 75);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (hex_scrolled_win),
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	gtk_container_add (GTK_CONTAINER (hex_scrolled_win), hex_textview);
 
-	gtk_paned_add1 (GTK_PANED (vpaned1), p_scrolled_win);
-        gtk_paned_add2 (GTK_PANED (vpaned1), hex_scrolled_win);
-        gtk_paned_add1 (GTK_PANED (vpaned2), pl_scrolled_win);
-        gtk_paned_add2 (GTK_PANED (vpaned2), vpaned1);
+	gtk_paned_add1 (GTK_PANED (vpaned1), pl_scrolled_win);
+        gtk_paned_add2 (GTK_PANED (vpaned1), vpaned2);
+        gtk_paned_pack1 (GTK_PANED (vpaned2), p_scrolled_win, TRUE, TRUE);
+        gtk_paned_pack2 (GTK_PANED (vpaned2), hex_scrolled_win, FALSE, FALSE);
 
-	gtk_box_pack_start (GTK_BOX (mn_vbox), vpaned2,TRUE,TRUE,2);
+	gtk_container_add(GTK_CONTAINER(mn_vbox), vpaned1);
 }
 
 void 
@@ -1971,7 +1974,7 @@ create_tool_bar()
         gtk_table_attach (GTK_TABLE (table), send_all_check, 2, 3, 0, 1,
                                 GTK_SHRINK, GTK_SHRINK, 0, 0);
 
-        gtk_box_pack_start (GTK_BOX (mn_vbox), table,FALSE,FALSE,1);
+        gtk_box_pack_start (GTK_BOX (mn_vbox), table,FALSE,TRUE,0);
 
 }
 
