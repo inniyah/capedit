@@ -50,6 +50,7 @@ enum {
 	UINT32_HEX,
 	UINT32_HEX_5,
 	STRING,
+	STRING_P,
 	MAC,
 	IPV4_ADDR,
 	IPV6_ADDR
@@ -67,7 +68,8 @@ enum {
 	P_IGMP_RV3,
 	P_ICMP,
 	P_UDP,
-	P_TCP
+	P_TCP,
+	P_DNS
 
 };
 struct pak_file_info {

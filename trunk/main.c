@@ -718,6 +718,8 @@ ptree_append(char *param, void *value, uint8_t type, uint8_t level, uint16_t p_r
                 sprintf(buf, "0x%05x", *((uint32_t *)value));
 	} else if (type == STRING) {
 		sprintf(buf," ");
+        } else if (type == STRING_P) {
+                sprintf(buf,"%s", value);
 	} else if (type == IPV4_ADDR) {
 		temp_val = (char *)ip_to_str((uint8_t *)value);
 		sprintf(buf, "%s", temp_val);

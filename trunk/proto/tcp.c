@@ -159,8 +159,10 @@ display_tcp(uint8_t **pak)
 	ptree_append("Checksum:", &tcp_hdr->check, UINT16_HEX, 1, P_TCP, 0);
 	ptree_append("Urgent pointer:", &tcp_hdr->urg_ptr, UINT16, 1, P_TCP, 0);
 
-	cur_pak_info.src_port = tcp_hdr->source;
-	cur_pak_info.dst_port = tcp_hdr->dest;
+	cur_pak_info.src_port = ntohs(tcp_hdr->source);
+	cur_pak_info.dst_port = ntohs(tcp_hdr->dest);
+
+	*pak += tcp_hdr->doff * 4;
 
 }
 

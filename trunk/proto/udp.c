@@ -96,8 +96,10 @@ display_udp(uint8_t **pak)
 	ptree_append("Length:",&udp_hdr->len,UINT16,1, P_UDP, 0);
 	ptree_append("Checksum:",&udp_hdr->check,UINT16_HEX,1, P_UDP, 0);
 
-	cur_pak_info.src_port = udp_hdr->source;
-	cur_pak_info.dst_port = udp_hdr->dest;
+	cur_pak_info.src_port = ntohs(udp_hdr->source);
+	cur_pak_info.dst_port = ntohs(udp_hdr->dest);
+
+	*pak += sizeof(struct udphdr);
 
 }
 

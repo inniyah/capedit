@@ -271,9 +271,11 @@ display_L4(uint8_t **pak, uint8_t L4_proto)
 }
 
 void
-display_L5(uint8_t *pak, uint16_t L5_proto)
+display_L5(uint8_t **pak)
 {
-
+	if (cur_pak_info.src_port == 53 || cur_pak_info.dst_port == 53) {
+		display_dns(pak);
+	}
 }
 
 
@@ -288,7 +290,7 @@ display_pak(uint8_t *pak)
 	L3_proto = display_L2(&hdr_cur);
 	L4_proto = display_L3(&hdr_cur, L3_proto);
 	L5_proto = display_L4(&hdr_cur, L4_proto);
-	display_L5(hdr_cur, L5_proto);
+	display_L5(&hdr_cur);
 
 }
 
