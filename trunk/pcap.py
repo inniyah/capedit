@@ -136,7 +136,6 @@ class Reader(object):
     def __iter__(self):
         self.__f.seek(FileHdr.__hdr_len__)
         while 1:
-            print 'iter'
             buf = self.__f.read(PktHdr.__hdr_len__)
             if not buf: break
             hdr = self.__ph(buf)

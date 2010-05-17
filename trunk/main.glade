@@ -2,15 +2,28 @@
 <interface>
   <requires lib="gtk+" version="2.16"/>
   <!-- interface-naming-policy project-wide -->
-  <object class="GtkTreeStore" id="treestore2"/>
-  <object class="GtkTreeStore" id="treestore1">
+  <object class="GtkTreeStore" id="pd_treestore"/>
+  <object class="GtkTreeStore" id="pl_treestore">
     <columns>
-      <!-- column-name select -->
+      <!-- column-name checkbox -->
       <column type="GtkButtonsType"/>
+      <!-- column-name no -->
+      <column type="guint"/>
+      <!-- column-name time -->
+      <column type="gchararray"/>
+      <!-- column-name source -->
+      <column type="gchararray"/>
+      <!-- column-name destination -->
+      <column type="gchararray"/>
+      <!-- column-name protocol -->
+      <column type="gchararray"/>
+      <!-- column-name info -->
+      <column type="gchararray"/>
     </columns>
   </object>
   <object class="GtkWindow" id="top_level">
     <property name="border_width">2</property>
+    <property name="icon">pkts.png</property>
     <signal name="destroy" handler="on_top_level_destroy"/>
     <child>
       <object class="GtkVBox" id="main_vbox">
@@ -34,6 +47,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <property name="accel_group">accelgroup1</property>
+                        <property name="always_show_image">True</property>
                       </object>
                     </child>
                     <child>
@@ -58,11 +72,13 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkImageMenuItem" id="imagemenuitem5">
+                      <object class="GtkImageMenuItem" id="quit_menu_item">
                         <property name="label">gtk-quit</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <property name="accel_group">accelgroup1</property>
+                        <property name="always_show_image">True</property>
                       </object>
                     </child>
                   </object>
@@ -378,7 +394,7 @@
                           <object class="GtkTreeView" id="packet_list_display">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="model">treestore1</property>
+                            <property name="model">pl_treestore</property>
                             <child>
                               <object class="GtkTreeViewColumn" id="treeviewcolumn1">
                                 <property name="resizable">True</property>
@@ -507,7 +523,7 @@
                               <object class="GtkTreeView" id="packet_display">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="model">treestore2</property>
+                                <property name="model">pd_treestore</property>
                               </object>
                             </child>
                           </object>
