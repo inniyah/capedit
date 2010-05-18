@@ -26,6 +26,29 @@ if switch == 'ON':
 tog_button.set_active(0)
 """
 
+class MainWindowInit:
+
+    def __init__(self, builder):
+
+        # get the widgets which will be referenced in callbacks
+        top_level = builder.get_object("top_level")
+
+        # Create an accelerator group
+        accelgroup = builder.get_object("accelgroup1")
+
+        # Add the accelerator group to the toplevel window
+        top_level.add_accel_group(accelgroup)
+
+        top_level.maximize()
+
+        top_level.connect("destroy", self.on_top_level_destroy)
+
+
+    def on_top_level_destroy (self, widget, data=None):
+
+        gtk.main_quit()
+
+
 class ReArrangeInit:
 
     def __init__(self, builder):
@@ -112,6 +135,9 @@ class FileMenuInit:
         quit_menu_item = self.builder.get_object("quit_menu_item")
         quit_menu_item.connect("activate", self.on_quit_menu_item_activate)
 
+        open_toolbar_button = self.builder.get_object("open_toolbar_button")
+        open_toolbar_button.connect("clicked", self.on_open_menu_item_activate)
+
     def on_open_menu_item_activate(self, menuitem, data=None):
         
         self.fo = File(self.builder)
@@ -127,34 +153,12 @@ class ViewMenuInit:
 
         ReArrangeInit(builder)
 
-class MainMenuInit:
+class MainMenuAndToolbarInit:
 
     def __init__(self, builder):
         
         FileMenuInit(builder)
         ViewMenuInit(builder)
-
-class MainWindowInit:
-
-    def __init__(self, builder):
-
-        # get the widgets which will be referenced in callbacks
-        top_level = builder.get_object("top_level")
-
-        # Create an accelerator group
-        accelgroup = builder.get_object("accelgroup1")
-
-        # Add the accelerator group to the toplevel window
-        top_level.add_accel_group(accelgroup)
-
-        top_level.maximize()
-        
-        top_level.connect("destroy", self.on_top_level_destroy)
-
-
-    def on_top_level_destroy (self, widget, data=None):
-
-        gtk.main_quit()
 
 
 class CapEditInit:
@@ -170,7 +174,7 @@ class CapEditInit:
             
         MainWindowInit(self.builder)
 
-        MainMenuInit(self.builder)
+        MainMenuAndToolbarInit(self.builder)
 
     # Run main application window
     def run(self):

@@ -11,6 +11,7 @@ class File:
 
     def get_open_filename(self):
 
+        filename = None
         chooser = gtk.FileChooserDialog("Open File...", self.top_level,
                                         gtk.FILE_CHOOSER_ACTION_OPEN,
                                         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -26,20 +27,20 @@ class File:
     def load_file(self):
 
         filename = self.get_open_filename()
-        try:
+        if filename != None:
+            try:
 
-            fin = open(filename, 'rb')
+                fin = open(filename, 'rb')
 
-            pcap = Reader(fin)
-            pl_store = self.builder.get_object("pl_treestore")
-            for ts, buf in pcap:
-                print ts
-                pl_store.append(None, (None,1,ts,"1.1.1.9","1.1.1.10","ftp","ftp-data"))
-            fin.close
-            self.filename = filename
+                pcap = Reader(fin)
+                pl_store = self.builder.get_object("pl_treestore")
+                for ts, buf in pcap:
+                    pl_store.append(None, (None,1,ts,"1.1.1.9","1.1.1.10","ftp","ftp-data"))
+                fin.close
+                self.filename = filename
 
-        except:
-            # error loading file, show message to user
-            #self.error_message ("Could not open file: %s" % filename)
-            pass
+            except:
+                # error loading file, show message to user
+                #self.error_message ("Could not open file: %s" % filename)
+                pass
 
