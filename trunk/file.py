@@ -31,8 +31,10 @@ class File:
             fin = open(filename, 'rb')
 
             pcap = Reader(fin)
+            pl_store = self.builder.get_object("pl_treestore")
             for ts, buf in pcap:
                 print ts
+                pl_store.append(None, (None,1,ts,"1.1.1.9","1.1.1.10","ftp","ftp-data"))
             fin.close
             self.filename = filename
 

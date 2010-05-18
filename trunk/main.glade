@@ -5,19 +5,19 @@
   <object class="GtkTreeStore" id="pd_treestore"/>
   <object class="GtkTreeStore" id="pl_treestore">
     <columns>
-      <!-- column-name checkbox -->
-      <column type="GtkButtonsType"/>
-      <!-- column-name no -->
+      <!-- column-name Checkbox -->
+      <column type="gboolean"/>
+      <!-- column-name No. -->
       <column type="guint"/>
-      <!-- column-name time -->
+      <!-- column-name Time -->
       <column type="gchararray"/>
-      <!-- column-name source -->
+      <!-- column-name Source -->
       <column type="gchararray"/>
-      <!-- column-name destination -->
+      <!-- column-name Destination -->
       <column type="gchararray"/>
-      <!-- column-name protocol -->
+      <!-- column-name Protocol -->
       <column type="gchararray"/>
-      <!-- column-name info -->
+      <!-- column-name Info -->
       <column type="gchararray"/>
     </columns>
   </object>
@@ -395,15 +395,19 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="model">pl_treestore</property>
+                            <property name="enable_tree_lines">True</property>
                             <child>
                               <object class="GtkTreeViewColumn" id="treeviewcolumn1">
                                 <property name="resizable">True</property>
-                                <property name="title">select</property>
+                                <property name="title">Checkbox</property>
                                 <property name="clickable">True</property>
                                 <property name="widget">checkbutton1</property>
                                 <signal name="clicked" handler="on_checkbutton1_toggled"/>
                                 <child>
                                   <object class="GtkCellRendererToggle" id="cellrenderertoggle1"/>
+                                  <attributes>
+                                    <attribute name="activatable">0</attribute>
+                                  </attributes>
                                 </child>
                               </object>
                             </child>
@@ -412,6 +416,12 @@
                                 <property name="resizable">True</property>
                                 <property name="title">No.</property>
                                 <property name="sort_indicator">True</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext1"/>
+                                  <attributes>
+                                    <attribute name="text">1</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                             </child>
                             <child>
@@ -419,30 +429,60 @@
                                 <property name="resizable">True</property>
                                 <property name="title">Time</property>
                                 <property name="sort_indicator">True</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext2"/>
+                                  <attributes>
+                                    <attribute name="text">2</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="treeviewcolumn4">
                                 <property name="resizable">True</property>
                                 <property name="title">Source</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext3"/>
+                                  <attributes>
+                                    <attribute name="text">3</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="treeviewcolumn5">
                                 <property name="resizable">True</property>
                                 <property name="title">Destination</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext4"/>
+                                  <attributes>
+                                    <attribute name="text">4</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="treeviewcolumn6">
                                 <property name="resizable">True</property>
                                 <property name="title">Protocol</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext5"/>
+                                  <attributes>
+                                    <attribute name="text">5</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="treeviewcolumn7">
                                 <property name="resizable">True</property>
-                                <property name="title">Info.</property>
+                                <property name="title">Info</property>
+                                <child>
+                                  <object class="GtkCellRendererText" id="cellrenderertext6"/>
+                                  <attributes>
+                                    <attribute name="text">6</attribute>
+                                  </attributes>
+                                </child>
                               </object>
                             </child>
                           </object>
