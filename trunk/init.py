@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import sys
+import re
+
 try:
      import pygtk
      pygtk.require("2.0")
@@ -25,6 +27,20 @@ tog_button.set_active(1)
 if switch == 'ON':
 tog_button.set_active(0)
 """
+
+rc_hash = {}
+
+def ReadRcFile():
+
+    try:
+        fd = open("capedit.rc", "rw")
+        global rc_hash
+        for line in fd:
+            sp = line.split('=')
+            rc_hash[sp[0]] = sp[1].replace('\n',"")
+        fd.close()
+    except:
+        print "Error Reading rc file"
 
 class MainWindowInit:
 
@@ -172,6 +188,8 @@ class CapEditInit:
         except:
             sys.exit(1)
             
+        ReadRcFile()
+
         MainWindowInit(self.builder)
 
         MainMenuAndToolbarInit(self.builder)
