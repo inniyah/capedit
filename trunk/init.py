@@ -73,15 +73,19 @@ class ReArrangeInit:
 
         view_main_toolbar_item = self.builder.get_object("view_main_toolbar_item")
         view_main_toolbar_item.connect("toggled", self.view_main_toolbar_item_toggled_cb)
+        self.view_main_toolbar_item_toggled_cb(view_main_toolbar_item, rc_hash["MAIN_TOOLBAR"])
 
         view_send_toolbox_item = self.builder.get_object("view_send_toolbox_item")
         view_send_toolbox_item.connect("toggled", self.view_send_toolbox_item_toggled_cb)
+        self.view_send_toolbox_item_toggled_cb(view_send_toolbox_item, rc_hash["SEND_TOOLBAR"])
 
         view_packet_list_display_item = self.builder.get_object("view_packet_list_display_item")
         view_packet_list_display_item.connect("toggled", self.view_packet_list_display_item_toggled_cb)
+        self.view_packet_list_display_item_toggled_cb(view_packet_list_display_item, rc_hash["PACKET_LIST_WINDOW"])
 
         view_packet_display_item = self.builder.get_object("view_packet_display_item")
         view_packet_display_item.connect("toggled", self.view_packet_display_item_toggled_cb)
+        self.view_packet_display_item_toggled_cb(view_packet_display_item, rc_hash["PACKET_DISPLAY_WINDOW"])
 
         view_packet_byte_display_item = self.builder.get_object("view_packet_byte_display_item")
         view_packet_byte_display_item.connect("toggled", self.view_packet_byte_display_item_toggled_cb)
@@ -91,51 +95,81 @@ class ReArrangeInit:
 
     def view_main_toolbar_item_toggled_cb(self, menuitem, data=None):
         main_toolbar = self.builder.get_object("main_toolbar")
-        switch =("OFF", "ON")[menuitem.get_active()]
+        if data != None:
+            switch = data            
+        else:
+            switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             main_toolbar.hide()
+            menuitem.set_active(0)
         elif switch == "ON":
             main_toolbar.show()
+            menuitem.set_active(1)
 
     def view_send_toolbox_item_toggled_cb(self, menuitem, data=None):
         send_toolbox = self.builder.get_object("send_toolbox")
-        switch =("OFF", "ON")[menuitem.get_active()]
+        if data != None:
+            switch = data
+        else:
+            switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             send_toolbox.hide()
+            menuitem.set_active(0)
         elif switch == "ON":
             send_toolbox.show()
+            menuitem.set_active(1)
 
     def view_packet_list_display_item_toggled_cb(self, menuitem, data=None):
         packet_list_display = self.builder.get_object("packet_list_display_vbox")
-        switch =("OFF", "ON")[menuitem.get_active()]
+        if data != None:
+            switch = data
+        else:
+            switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             packet_list_display.hide()
+            menuitem.set_active(0)
         elif switch == "ON":
             packet_list_display.show()
+            menuitem.set_active(1)
 
     def view_packet_display_item_toggled_cb(self, menuitem, data=None):
         packet_display = self.builder.get_object("packet_display_vbox")
-        switch =("OFF", "ON")[menuitem.get_active()]
+        if data != None:
+            switch = data
+        else:
+            switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             packet_display.hide()
+            menuitem.set_active(0)
         elif switch == "ON":
             packet_display.show()
+            menuitem.set_active(1)
 
     def view_packet_byte_display_item_toggled_cb(self, menuitem, data=None):
         packet_byte_display = self.builder.get_object("packet_byte_display_vbox")
-        switch =("OFF", "ON")[menuitem.get_active()]
+        if data != None:
+            switch = data
+        else:
+            switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             packet_byte_display.hide()
+            menuitem.set_active(0)
         elif switch == "ON":
             packet_byte_display.show()
+            menuitem.set_active(1)
 
     def view_statusbar_item_toggled_cb(self, menuitem, data=None):
         statusbar = self.builder.get_object("statusbar")
-        switch =("OFF", "ON")[menuitem.get_active()]
+        if data != None:
+            switch = data
+        else:
+            switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             statusbar.hide()
+            menuitem.set_active(0)
         elif switch == "ON":
             statusbar.show()
+            menuitem.set_active(1)
 
 class FileMenuInit:
 
