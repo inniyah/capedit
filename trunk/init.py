@@ -28,19 +28,41 @@ if switch == 'ON':
 tog_button.set_active(0)
 """
 
-rc_hash = {}
+class RcFile:
 
-def ReadRcFile():
+    rc_hash = {}
 
-    try:
-        fd = open("capedit.rc", "rw")
-        global rc_hash
-        for line in fd:
-            sp = line.split('=')
-            rc_hash[sp[0]] = sp[1].replace('\n',"")
-        fd.close()
-    except:
-        print "Error Reading rc file"
+    def ReadRcFile(self):
+
+        try:
+            fd = open("capedit.rc", "r")
+            for line in fd:
+                sp = line.split('=')
+                self.rc_hash[sp[0]] = sp[1].replace('\n',"")
+            fd.close()
+
+        except:
+            print "Error Reading rc file"
+
+    def WriteRcFile(self):
+
+        try:
+            fd = open("capedit.rc", "w")
+            for key in self.rc_hash:
+                str = key+"="+self.rc_hash[key]+"\n"
+                fd.write(str)
+            fd.close()
+
+        except:
+            print "Error Writing rc file"
+
+    def UpdateRcValue(self, key, value):
+
+        try:
+            self.rc_hash[key] = value
+
+        except:
+            print "Rc key value Error"
 
 class MainWindowInit:
 
@@ -61,7 +83,7 @@ class MainWindowInit:
 
 
     def on_top_level_destroy (self, widget, data=None):
-
+        RcFile().WriteRcFile()
         gtk.main_quit()
 
 
@@ -70,46 +92,51 @@ class ReArrangeInit:
     def __init__(self, builder):
         self.top_level = builder.get_object("top_level")
         self.builder = builder
+        self.rc = RcFile()
 
         view_main_toolbar_item = self.builder.get_object("view_main_toolbar_item")
         view_main_toolbar_item.connect("toggled", self.view_main_toolbar_item_toggled_cb)
-        self.view_main_toolbar_item_toggled_cb(view_main_toolbar_item, rc_hash["MAIN_TOOLBAR"])
+        self.view_main_toolbar_item_toggled_cb(view_main_toolbar_item, "INIT")
 
         view_send_toolbox_item = self.builder.get_object("view_send_toolbox_item")
         view_send_toolbox_item.connect("toggled", self.view_send_toolbox_item_toggled_cb)
-        self.view_send_toolbox_item_toggled_cb(view_send_toolbox_item, rc_hash["SEND_TOOLBAR"])
+        self.view_send_toolbox_item_toggled_cb(view_send_toolbox_item, "INIT")
 
         view_packet_list_display_item = self.builder.get_object("view_packet_list_display_item")
         view_packet_list_display_item.connect("toggled", self.view_packet_list_display_item_toggled_cb)
-        self.view_packet_list_display_item_toggled_cb(view_packet_list_display_item, rc_hash["PACKET_LIST_WINDOW"])
+        self.view_packet_list_display_item_toggled_cb(view_packet_list_display_item, "INIT")
 
         view_packet_display_item = self.builder.get_object("view_packet_display_item")
         view_packet_display_item.connect("toggled", self.view_packet_display_item_toggled_cb)
-        self.view_packet_display_item_toggled_cb(view_packet_display_item, rc_hash["PACKET_DISPLAY_WINDOW"])
+        self.view_packet_display_item_toggled_cb(view_packet_display_item, "INIT")
 
         view_packet_byte_display_item = self.builder.get_object("view_packet_byte_display_item")
         view_packet_byte_display_item.connect("toggled", self.view_packet_byte_display_item_toggled_cb)
+        self.view_packet_byte_display_item_toggled_cb(view_packet_byte_display_item, "INIT")
 
         view_statusbar_item = self.builder.get_object("view_statusbar_item")
         view_statusbar_item.connect("toggled", self.view_statusbar_item_toggled_cb)
+        self.view_statusbar_item_toggled_cb(view_statusbar_item, "INIT")
 
     def view_main_toolbar_item_toggled_cb(self, menuitem, data=None):
         main_toolbar = self.builder.get_object("main_toolbar")
-        if data != None:
-            switch = data            
+        if data == "INIT":
+            switch = self.rc.rc_hash["MAIN_TOOLBAR"]            
         else:
             switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             main_toolbar.hide()
             menuitem.set_active(0)
+            self.rc.UpdateRcValue("MAIN_TOOLBAR", switch)
         elif switch == "ON":
             main_toolbar.show()
             menuitem.set_active(1)
+            self.rc.UpdateRcValue("MAIN_TOOLBAR", switch)
 
     def view_send_toolbox_item_toggled_cb(self, menuitem, data=None):
         send_toolbox = self.builder.get_object("send_toolbox")
         if data != None:
-            switch = data
+            switch = self.rc.rc_hash["MAIN_TOOLBAR"]
         else:
             switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
@@ -195,6 +222,7 @@ class FileMenuInit:
 
     def on_quit_menu_item_activate(self, menuitem, data=None):
 
+        RcFile().WriteRcFile()
         gtk.main_quit()
 
 class ViewMenuInit:
@@ -222,7 +250,7 @@ class CapEditInit:
         except:
             sys.exit(1)
             
-        ReadRcFile()
+        RcFile().ReadRcFile()
 
         MainWindowInit(self.builder)
 
