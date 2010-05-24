@@ -2,6 +2,7 @@
 
 import sys
 import re
+import os.path
 
 try:
      import pygtk
@@ -136,67 +137,77 @@ class ReArrangeInit:
     def view_send_toolbox_item_toggled_cb(self, menuitem, data=None):
         send_toolbox = self.builder.get_object("send_toolbox")
         if data != None:
-            switch = self.rc.rc_hash["MAIN_TOOLBAR"]
+            switch = self.rc.rc_hash["SEND_TOOLBAR"]
         else:
             switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             send_toolbox.hide()
             menuitem.set_active(0)
+            self.rc.UpdateRcValue("SEND_TOOLBAR", switch)
         elif switch == "ON":
             send_toolbox.show()
             menuitem.set_active(1)
+            self.rc.UpdateRcValue("SEND_TOOLBAR", switch)
 
     def view_packet_list_display_item_toggled_cb(self, menuitem, data=None):
         packet_list_display = self.builder.get_object("packet_list_display_vbox")
         if data != None:
-            switch = data
+            switch = self.rc.rc_hash["PACKET_LIST_WINDOW"]
         else:
             switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             packet_list_display.hide()
             menuitem.set_active(0)
+            self.rc.UpdateRcValue("PACKET_LIST_WINDOW", switch)
         elif switch == "ON":
             packet_list_display.show()
             menuitem.set_active(1)
+            self.rc.UpdateRcValue("PACKET_LIST_WINDOW", switch)
 
     def view_packet_display_item_toggled_cb(self, menuitem, data=None):
         packet_display = self.builder.get_object("packet_display_vbox")
         if data != None:
-            switch = data
+            switch = self.rc.rc_hash["PACKET_DISPLAY_WINDOW"]
         else:
             switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             packet_display.hide()
             menuitem.set_active(0)
+            self.rc.UpdateRcValue("PACKET_DISPLAY_WINDOW", switch)
         elif switch == "ON":
             packet_display.show()
             menuitem.set_active(1)
+            self.rc.UpdateRcValue("PACKET_DISPLAY_WINDOW", switch)
 
     def view_packet_byte_display_item_toggled_cb(self, menuitem, data=None):
         packet_byte_display = self.builder.get_object("packet_byte_display_vbox")
         if data != None:
-            switch = data
+            switch = self.rc.rc_hash["PACKET_BYTE_WINDOW"]
         else:
             switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             packet_byte_display.hide()
             menuitem.set_active(0)
+            self.rc.UpdateRcValue("PACKET_BYTE_WINDOW", switch)
         elif switch == "ON":
             packet_byte_display.show()
             menuitem.set_active(1)
+            self.rc.UpdateRcValue("PACKET_BYTE_WINDOW", switch)
 
     def view_statusbar_item_toggled_cb(self, menuitem, data=None):
         statusbar = self.builder.get_object("statusbar")
         if data != None:
-            switch = data
+            switch = self.rc.rc_hash["STATUSBAR"]
         else:
             switch =("OFF", "ON")[menuitem.get_active()]
         if switch == "OFF":
             statusbar.hide()
             menuitem.set_active(0)
+            self.rc.UpdateRcValue("STATUSBAR", switch)
         elif switch == "ON":
             statusbar.show()
             menuitem.set_active(1)
+            self.rc.UpdateRcValue("STATUSBAR", switch)
 
 class FileMenuInit:
 
@@ -205,6 +216,7 @@ class FileMenuInit:
         self.builder = builder
         self.top_level = builder.get_object("top_level")
         self.fo = None
+        self.rc = RcFile()
 
         open_menu_item = self.builder.get_object("open_menu_item")
         open_menu_item.connect("activate", self.on_open_menu_item_activate)
@@ -215,11 +227,16 @@ class FileMenuInit:
         open_toolbar_button = self.builder.get_object("open_toolbar_button")
         open_toolbar_button.connect("clicked", self.on_open_menu_item_activate)
 
+        self.fo = File(self.builder)
+
     def on_open_menu_item_activate(self, menuitem, data=None):
         
-        self.fo = File(self.builder)
-        self.fo.load_file()
-
+        file, dir = self.fo.load_file(self.rc.rc_hash["OPEN_DIR"])
+        if file != None:
+            self.top_level.set_title(os.path.basename(file))
+            if dir != None:
+                self.rc.UpdateRcValue("OPEN_DIR", dir)
+       
     def on_quit_menu_item_activate(self, menuitem, data=None):
 
         RcFile().WriteRcFile()
