@@ -5,16 +5,21 @@ import re
 import os.path
 
 try:
-     import pygtk
-     pygtk.require("2.0")
+    import pygtk
+    pygtk.require("2.0")
 except:
-      pass
+    print 'Module pygtk not present'
+    sys.exit(1)
 try:
     import gtk
+except:
+    print 'Module gtk not present'
+    sys.exit(1)
+try:
     import gtk.glade
 except:
-    sys.exit(1)
-    
+    print 'Module gkt.glade not present'
+
 import sys
 import os
 from file import File

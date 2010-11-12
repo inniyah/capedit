@@ -725,6 +725,7 @@
   </object>
   <object class="GtkFileChooserDialog" id="open_file_chooser_dialog">
     <property name="border_width">5</property>
+    <property name="modal">True</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
@@ -765,10 +766,12 @@
             </child>
             <child>
               <object class="GtkButton" id="open_file_chooser_dialog_open_button">
-                <property name="label" translatable="yes">Open</property>
+                <property name="label">gtk-open</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+                <property name="image_position">top</property>
               </object>
               <packing>
                 <property name="expand">False</property>

@@ -23,10 +23,12 @@ class File:
         self.chooser.connect("selection-changed", self.file_chooser_selection_changed)
 
         chooser = self.chooser
+        
         if os.path.exists(dir) == True:
             chooser.set_current_folder(dir)
         response = chooser.run()
-        if response == gtk.RESPONSE_ACCEPT:
+        print response
+        if response == 0:
             self.filename = chooser.get_filename()
             dir =  chooser.get_current_folder()
         chooser.destroy()
