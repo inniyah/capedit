@@ -16,13 +16,14 @@ class _MetaPacket(type):
         if st is not None:
             # XXX - __slots__ only created in __new__()
             clsdict['__slots__'] = [ x[0] for x in st ] + [ 'data' ]
-            #t = type.__new__(cls, clsname, clsbases, clsdict)
+            t = type.__new__(cls, clsname, clsbases, clsdict)
             t.__hdr_fields__ = [ x[0] for x in st ]
             t.__hdr_fmt__ = getattr(t, '__byte_order__', '>') + \
                             ''.join([ x[1] for x in st ])
             t.__hdr_len__ = struct.calcsize(t.__hdr_fmt__)
             t.__hdr_defaults__ = dict(zip(
                 t.__hdr_fields__, [ x[2] for x in st ]))
+            t.__hdr_names__ = [ x[3] for x in st ]
         return t
 
 class Packet(object):
@@ -125,5 +126,6 @@ class Packet(object):
         for k, v in itertools.izip(self.__hdr_fields__,
             struct.unpack(self.__hdr_fmt__, buf[:self.__hdr_len__])):
             setattr(self, k, v)
+        for k, v in itertools.izip(self.__hdr_fields__,self.__hdr_names__):
+            setattr(self, k +'_name', v)
         self.data = buf[self.__hdr_len__:]
-

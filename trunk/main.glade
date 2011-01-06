@@ -240,7 +240,7 @@
               <object class="GtkToolButton" id="open_toolbar_button">
                 <property name="visible">True</property>
                 <property name="tooltip_text" translatable="yes">Open a capture file...</property>
-                <property name="label" translatable="yes">Open a capture file...</property>
+                <property name="resize_mode">immediate</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-open</property>
                 <signal name="clicked" handler="on_open_menu_item_activate"/>
@@ -253,7 +253,7 @@
             <child>
               <object class="GtkToolButton" id="save_button">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Save this capture file...</property>
+                <property name="tooltip_text" translatable="yes">Save this capture file.</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-save</property>
               </object>
@@ -265,7 +265,7 @@
             <child>
               <object class="GtkToolButton" id="save_as">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Save this capture file as...</property>
+                <property name="tooltip_text" translatable="yes">Save this capture file as...</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-save-as</property>
               </object>
@@ -277,7 +277,7 @@
             <child>
               <object class="GtkToolButton" id="close_button">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Close this capture file</property>
+                <property name="tooltip_text" translatable="yes">Close this capture file</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-close</property>
               </object>
@@ -289,7 +289,7 @@
             <child>
               <object class="GtkToolButton" id="Reload this capture file">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Reload this capture file</property>
+                <property name="tooltip_text" translatable="yes">Reload this capture file.</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-refresh</property>
               </object>
@@ -322,7 +322,7 @@
             <child>
               <object class="GtkButton" id="send_button">
                 <property name="label" translatable="yes">Send</property>
-                <property name="width_request">6</property>
+                <property name="width_request">2</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -728,7 +728,6 @@
     <property name="modal">True</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
     <child internal-child="vbox">
       <object class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
@@ -741,7 +740,6 @@
             <property name="can_focus">True</property>
             <property name="editable">False</property>
             <property name="cursor_visible">False</property>
-            <property name="buffer">open_file_chooser_dialog_textview_buffer</property>
           </object>
           <packing>
             <property name="position">2</property>
@@ -793,5 +791,8 @@
       <action-widget response="0">open_file_chooser_dialog_open_button</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkTextBuffer" id="open_file_chooser_dialog_textview_buffer"/>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="stock">gtk-missing-image</property>
+  </object>
 </interface>

@@ -42,10 +42,10 @@ dltoff = { DLT_NULL:4, DLT_EN10MB:14, DLT_IEEE802:22, DLT_ARCNET:6,
 class PktHdr(pkt.Packet):
     """pcap packet header."""
     __hdr__ = (
-        ('tv_sec', 'I', 0),
-        ('tv_usec', 'I', 0),
-        ('caplen', 'I', 0),
-        ('len', 'I', 0),
+        ('tv_sec', 'I', 0, ''),
+        ('tv_usec', 'I', 0, ''),
+        ('caplen', 'I', 0, ''),
+        ('len', 'I', 0, ''),
         )
 
 class LEPktHdr(PktHdr):
@@ -54,13 +54,13 @@ class LEPktHdr(PktHdr):
 class FileHdr(pkt.Packet):
     """pcap file header."""
     __hdr__ = (
-        ('magic', 'I', TCPDUMP_MAGIC),
-        ('v_major', 'H', PCAP_VERSION_MAJOR),
-        ('v_minor', 'H', PCAP_VERSION_MINOR),
-        ('thiszone', 'I', 0),
-        ('sigfigs', 'I', 0),
-        ('snaplen', 'I', 1500),
-        ('linktype', 'I', 1),
+        ('magic', 'I', TCPDUMP_MAGIC, ''),
+        ('v_major', 'H', PCAP_VERSION_MAJOR,''),
+        ('v_minor', 'H', PCAP_VERSION_MINOR, ''),
+        ('thiszone', 'I', 0, ''),
+        ('sigfigs', 'I', 0, ''),
+        ('snaplen', 'I', 1500, ''),
+        ('linktype', 'I', 1, ''),
         )
 
 class LEFileHdr(FileHdr):
@@ -91,6 +91,7 @@ class Reader(object):
     """Simple pypcap-compatible pcap file reader."""
     
     def __init__(self, fileobj):
+        print 'in reader'
         self.name = fileobj.name
         self.fd = fileobj.fileno()
         self.__f = fileobj

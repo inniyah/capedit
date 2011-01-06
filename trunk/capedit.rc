@@ -1,6 +1,6 @@
 PACKET_LIST_WINDOW=ON
 PACKET_DISPLAY_WINDOW=ON
-OPEN_DIR=/root/packetsquare-capedit
+OPEN_DIR=C:\Documents and Settings\Administrator\workspace\packetsquare-capedit\trunk
 STATUSBAR=ON
 SEND_TOOLBAR=ON
 MAIN_TOOLBAR=ON
