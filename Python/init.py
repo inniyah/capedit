@@ -18,7 +18,7 @@ except:
 try:
     import gtk.glade
 except:
-    print 'Module gkt.glade not present'
+    print 'Module gtk.glade not present'
 
 import sys
 import os
