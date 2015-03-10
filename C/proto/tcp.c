@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include "../main.h"
 #include "../packet.h"
+#include <netinet/in.h>
 
 typedef struct v6_PseudoHeader{
 
